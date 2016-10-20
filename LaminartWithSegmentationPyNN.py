@@ -11,7 +11,6 @@
 import os, sys
 import matplotlib.pyplot as plt
 import numpy
-from images2gif import writeGif
 from createFilters import createFilters, createPoolingConnectionsAndFilters
 
 # Function that builds all the layers of the network and connect them according to the Laminart model, enhanced with segmentation ; returns the full network and all the connections
