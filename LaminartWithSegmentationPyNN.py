@@ -22,26 +22,26 @@ def buildNetworkAndConnections(sim, ImageNumPixelRows, ImageNumPixelColumns, num
     ### Build orientation filters and connection patterns ###
     #########################################################
 
+    sys.stdout.write('\nSetting up orientation filters...\n')
+
     # Boundary coordinates (boundaries exist at positions between retinotopic coordinates, so add extra pixel on each side to insure a boundary could exists for retinal pixel)
     numPixelRows = ImageNumPixelRows + 1        # height for oriented neurons (placed between un-oriented pixels)
     numPixelColumns = ImageNumPixelColumns + 1  # width for oriented neurons (placed between un-oriented pixels)
 
     # Set the orientation filters (orientation kernels, V1 and V2 layer23 pooling filters)
-    sys.stdout.write('\nSetting up orientation filters...\n')
+    filters1, filters2 = createFilters(numOrientations, oriFilterSize, sigma2=0.75, Olambda=4)
+    V1poolingfilters, V1poolingconnections1, V1poolingconnections2 = createPoolingConnectionsAndFilters(numOrientations, VPoolSize=V1PoolSize, sigma2=4.0, Olambda=5)
+    V2poolingfilters, V2poolingconnections1, V2poolingconnections2 = createPoolingConnectionsAndFilters(numOrientations, VPoolSize=V2PoolSize, sigma2=26.0, Olambda=9)
 
     OppositeOrientationIndex = list(numpy.roll(range(numOrientations), numOrientations/2))
     # For numOrientations = 2, orientation indexes = [vertical, horizontal] -> opposite orientation indexes = [horizontal, vertical]
     # For numOrientations = 4, orientation indexes = [ /, |, \, - ] -> opposite orientation indexes = [ \, -, \, | ]
     # For numOrientations = 8, [ /h, /, /v, |, \v, \, \h, - ] -> [ \v, \, \h, -, /h, /, /v, | ] ([h,v] = [more horizontal, more vertical])
 
-    filters1, filters2 = createFilters(numOrientations, oriFilterSize, sigma2=0.75, Olambda=4)
-    V1poolingfilters, V1poolingconnections1, V1poolingconnections2 = createPoolingConnectionsAndFilters(numOrientations, VPoolSize=V1PoolSize, sigma2=4.0, Olambda=5)
-    V2poolingfilters, V2poolingconnections1, V2poolingconnections2 = createPoolingConnectionsAndFilters(numOrientations, VPoolSize=V2PoolSize, sigma2=26.0, Olambda=9)
-
     # Set up filters for filling-in stage (spreads in various directions).
     # Interneurons receive inhib. input from all but boundary ori. that matches flow direction. Up, Right (Down and Left are defined implicitly by these)
     numFlows = 2  # (brightness/darkness) right and down
-    flowFilter = [ [1,0], [0,1]]  # down, right
+    flowFilter = [[1,0], [0,1]]  # down, right
 
     # Specify flow orientation (all others block) and position of blockers
     # Different subarrays are for different flow directions
@@ -82,7 +82,7 @@ def buildNetworkAndConnections(sim, ImageNumPixelRows, ImageNumPixelColumns, num
     sys.stdout.write('V1,...')
     sys.stdout.flush()
 
-    # Simple oriented (H or V)
+    # Simple oriented neurons
     layer4P1 = sim.Population(numOrientations*numPixelRows*numPixelColumns, normalCellType)
     layer4P2 = sim.Population(numOrientations*numPixelRows*numPixelColumns, normalCellType)
     layer6P1 = sim.Population(numOrientations*numPixelRows*numPixelColumns, normalCellType)
@@ -164,14 +164,14 @@ def buildNetworkAndConnections(sim, ImageNumPixelRows, ImageNumPixelColumns, num
     sys.stdout.write('done. \nSetting up V1, Layers 4 and 6...')
     sys.stdout.flush()
 
-    OfilterWeight = 400*weightScale  # originally 200, 370 too big, 300 too small, 310 too big (remove weightScale?)
+    OfilterWeight = 400*weightScale
     for k in range(0, numOrientations):                         # Orientations
         for i2 in range(-oriFilterSize/2, oriFilterSize/2):     # Filter rows
             for j2 in range(-oriFilterSize/2, oriFilterSize/2): # Filter columns
-                ST = []     # Source-Target vector containing indexes of neurons to connect within specific layers
-                ST2 = []    # Second Source-Target vector for another connection
-                for i in range(oriFilterSize/2, numPixelRows-oriFilterSize/2):          # Rows
-                    for j in range(oriFilterSize/2, numPixelColumns-oriFilterSize/2):   # Columns
+                ST = []                                         # Source-Target vector containing indexes of neurons to connect within specific layers
+                ST2 = []                                        # Second Source-Target vector for another connection
+                for i in range(oriFilterSize/2, numPixelRows-oriFilterSize/2):         # Rows
+                    for j in range(oriFilterSize/2, numPixelColumns-oriFilterSize/2):  # Columns
                         if i+i2 >=0 and i+i2<ImageNumPixelRows and j+j2>=0 and j+j2<ImageNumPixelColumns:
                             # Dark inputs use reverse polarity filter
                             if abs(filters1[k][i2+oriFilterSize/2][j2+oriFilterSize/2]) > 0.1:
@@ -232,15 +232,15 @@ def buildNetworkAndConnections(sim, ImageNumPixelRows, ImageNumPixelColumns, num
     ST4 = []
     ST5 = []
     ST6 = []
-    for k in range(0, numOrientations):                                 # Orientations
-        for i in range(0, numPixelRows):                                # Rows
-            for j in range(0, numPixelColumns):                         # Columns
-                for k2 in range(0, numOrientations):                    # Other orientations
+    for k in range(0, numOrientations):                                # Orientations
+        for i in range(0, numPixelRows):                               # Rows
+            for j in range(0, numPixelColumns):                        # Columns
+                for k2 in range(0, numOrientations):                   # Other orientations
                     if k != k2:
                         ST.append((k*numPixelRows*numPixelColumns + i*numPixelColumns + j, k2*numPixelRows*numPixelColumns + i*numPixelColumns + j))
 
-                for i2 in range(-V1PoolSize/2+1, V1PoolSize/2+1):       # Filter rows (extra +1 to insure get top of odd-numbered filter)
-                    for j2 in range(-V1PoolSize/2+1, V1PoolSize/2+1):   # Filter columns
+                for i2 in range(-V1PoolSize/2+1, V1PoolSize/2+1):      # Filter rows (extra +1 to insure get top of odd-numbered filter)
+                    for j2 in range(-V1PoolSize/2+1, V1PoolSize/2+1):  # Filter columns
 
                         if V1poolingfilters[k][i2+V1PoolSize/2][j2+V1PoolSize/2] > 0:
                             if i+i2 >= 0 and i+i2 < ImageNumPixelRows and j+j2 >= 0 and j+j2 < ImageNumPixelColumns:
@@ -663,7 +663,7 @@ def buildNetworkAndConnections(sim, ImageNumPixelRows, ImageNumPixelColumns, num
     sys.stdout.write('done. \n'+str(synapseCount)+' network connections created.\n')
     sys.stdout.flush()
 
-    # Return only the populations that need to be updated online
+    # Return only the populations that need to be updated online during the simulation
     network = LGNBrightInput + LGNDarkInput
     if useSurfaceSegmentation:
         network += (SurfaceSegmentationOnSignal + SurfaceSegmentationOffSignal)
