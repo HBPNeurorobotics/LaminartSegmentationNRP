@@ -481,8 +481,8 @@ def buildNetworkAndConnections(sim, ImageNumPixelRows, ImageNumPixelColumns, num
     # Strong inhibition between segmentation layers
     if numSegmentationLayers>1:
         ST = []
-        for h in range(0, numSegmentationLayers-1):  # Num layers (not including baseline layer)
-            for i in range(0, ImageNumPixelRows):  # Rows
+        for h in range(0, numSegmentationLayers-1):       # Num layers (not including baseline layer)
+            for i in range(0, ImageNumPixelRows):         # Rows
                 for j in range(0, ImageNumPixelColumns):  # Columns
                     for k2 in range(0, numOrientations):
                         for h2 in range(h, numSegmentationLayers-1):
@@ -658,7 +658,7 @@ def buildNetworkAndConnections(sim, ImageNumPixelRows, ImageNumPixelColumns, num
     sys.stdout.write('done. \n'+str(synapseCount)+' network connections created.\n')
     sys.stdout.flush()
 
-    # Return only the populations that need to be updated online during the simulation
+    # Return only the populations that need to be updated online during the simulation and that we want to make a gif of
     network = LGNBrightInput + LGNDarkInput + V2layer23 + LGNBright + layer6P1
     if useSurfaceSegmentation:
         network += (SurfaceSegmentationOnSignal + SurfaceSegmentationOffSignal)
