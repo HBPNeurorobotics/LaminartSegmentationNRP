@@ -490,7 +490,7 @@ def buildNetworkAndConnections(sim, ImageNumPixelRows, ImageNumPixelColumns, num
                                        (h2+1)*numOrientations*numPixelRows*numPixelColumns + k2*numPixelRows*numPixelColumns + i*numPixelColumns + j))
 
         # Boundaries in lower levels strongly inhibit boundaries in higher segmentation levels (lower levels can be inhibited by segmentation signals)
-        V2InterSegmentInhib = sim.Projection(V2layer23, V2layer4, sim.FromListConnector(ST), sim.StaticSynapse(weight=connections['segmentInhib2']))
+        V2InterSegmentInhib = sim.Projection(V2layer23, V2layer4, sim.FromListConnector(ST), sim.StaticSynapse(weight=connections['SegmentInhib2']))
         synapseCount += len(ST)
 
     ########### Surface segmentation network ############
@@ -540,9 +540,9 @@ def buildNetworkAndConnections(sim, ImageNumPixelRows, ImageNumPixelColumns, num
                                                     h2*numOrientations*numPixelRows*numPixelColumns + k2*numPixelRows*numPixelColumns + (i+i2)*numPixelColumns + (j+j2)))
 
         # Input from segmentation signals and Off signals inhibit On Signals (can be separated by boundaries)
-        SurfSegmOnSignalInput  = sim.Projection(SurfaceSegmentationOnSignal,  SurfaceSegmentationOn,  sim.OneToOneConnector(), sim.StaticSynapse(weight=connections['segmentExcite']))
-        SurfSegmOffSignalInput = sim.Projection(SurfaceSegmentationOffSignal, SurfaceSegmentationOff, sim.OneToOneConnector(), sim.StaticSynapse(weight=connections['segmentExcite']))
-        SurfSegmOffInhibOn     = sim.Projection(SurfaceSegmentationOff,       SurfaceSegmentationOn,  sim.OneToOneConnector(), sim.StaticSynapse(weight=connections['segmentInhib']))
+        SurfSegmOnSignalInput  = sim.Projection(SurfaceSegmentationOnSignal,  SurfaceSegmentationOn,  sim.OneToOneConnector(), sim.StaticSynapse(weight=connections['SegmentExcite']))
+        SurfSegmOffSignalInput = sim.Projection(SurfaceSegmentationOffSignal, SurfaceSegmentationOff, sim.OneToOneConnector(), sim.StaticSynapse(weight=connections['SegmentExcite']))
+        SurfSegmOffInhibOn     = sim.Projection(SurfaceSegmentationOff,       SurfaceSegmentationOn,  sim.OneToOneConnector(), sim.StaticSynapse(weight=connections['SegmentInhib']))
         synapseCount += (len(SurfaceSegmentationOnSignal) + len(SurfaceSegmentationOffSignal) + len(SurfaceSegmentationOff))
 
         # SurfaceSegmentationOn/Off <-> Interneurons ; fliplr to use the connections in the way "target indexes --> source indexes"
@@ -574,11 +574,11 @@ def buildNetworkAndConnections(sim, ImageNumPixelRows, ImageNumPixelColumns, num
         synapseCount += 4*len(ST3)
 
         # V2layer23 -> V2layer4 strong inhibition (check why it is there twice, regarding connection matrices)
-        V223InhibV24 = sim.Projection(V2layer23, V2layer4, sim.FromListConnector(ST4), sim.StaticSynapse(weight=connections['segmentInhib2']))
+        V223InhibV24 = sim.Projection(V2layer23, V2layer4, sim.FromListConnector(ST4), sim.StaticSynapse(weight=connections['SegmentInhib2']))
         synapseCount += len(ST4)
 
         # Segmentation -> V2layer4 (gating) ; way for lower levels to be inhibited by higher ones : through segmentation network)
-        SurfSegmOnInhibV24 = sim.Projection(SurfaceSegmentationOn, V2layer4, sim.FromListConnector(ST5), sim.StaticSynapse(weight=connections['segmentInhib']))
+        SurfSegmOnInhibV24 = sim.Projection(SurfaceSegmentationOn, V2layer4, sim.FromListConnector(ST5), sim.StaticSynapse(weight=connections['SegmentInhib']))
         synapseCount += len(ST5)
 
     ########### Boundary segmentation network ############
@@ -622,14 +622,14 @@ def buildNetworkAndConnections(sim, ImageNumPixelRows, ImageNumPixelColumns, num
                                                     h2*numOrientations*numPixelRows*numPixelColumns + k2*numPixelRows*numPixelColumns + (i+i2)*numPixelColumns + (j+j2)))
 
         # Input from segmentation signals /// and Off signals inhibit On Signals (removed) ///
-        BoundSegmOnSignalInput  = sim.Projection(BoundarySegmentationOnSignal,  BoundarySegmentationOn,  sim.OneToOneConnector(), sim.StaticSynapse(weight=connections['segmentExcite2']))
-        BoundSegmOffSignalInput = sim.Projection(BoundarySegmentationOffSignal, BoundarySegmentationOff, sim.OneToOneConnector(), sim.StaticSynapse(weight=connections['segmentExcite2']))
+        BoundSegmOnSignalInput  = sim.Projection(BoundarySegmentationOnSignal,  BoundarySegmentationOn,  sim.OneToOneConnector(), sim.StaticSynapse(weight=connections['SegmentExcite2']))
+        BoundSegmOffSignalInput = sim.Projection(BoundarySegmentationOffSignal, BoundarySegmentationOff, sim.OneToOneConnector(), sim.StaticSynapse(weight=connections['SegmentExcite2']))
         # BoundSegmOffInhibOn   = sim.Projection(BoundarySegmentationOff,       BoundarySegmentationOn,  sim.OneToOneConnector(), sim.StaticSynapse(weight=-5000.0*weightScale))
         synapseCount += (len(BoundarySegmentationOnSignal) + len(BoundarySegmentationOffSignal))  # + len(BoundarySegmentationOff))
 
         # BoundarySegmentationOn<->Interneurons (flow out on interneuron 1 flow in on interneuron 2) ; fliplr to use the connections in the way "target indexes --> source indexes"
-        BoundSegmOnToInter1 =  sim.Projection(BoundarySegmentationOn,       BoundarySegmentationOnInter1, sim.FromListConnector(ST),               sim.StaticSynapse(weight=connections['segmentExcite1']))
-        Inter2ToBoundSegmOn =  sim.Projection(BoundarySegmentationOnInter2, BoundarySegmentationOn,       sim.FromListConnector(numpy.fliplr(ST)), sim.StaticSynapse(weight=connections['segmentExcite1']))
+        BoundSegmOnToInter1 =  sim.Projection(BoundarySegmentationOn,       BoundarySegmentationOnInter1, sim.FromListConnector(ST),               sim.StaticSynapse(weight=connections['SegmentExcite1']))
+        Inter2ToBoundSegmOn =  sim.Projection(BoundarySegmentationOnInter2, BoundarySegmentationOn,       sim.FromListConnector(numpy.fliplr(ST)), sim.StaticSynapse(weight=connections['SegmentExcite1']))
         synapseCount += 2*len(ST)
 
         # Mutual inhibition of interneurons (may not need this: flow only when Inter3 is inhibited - 19 Dec 2014)
@@ -638,21 +638,21 @@ def buildNetworkAndConnections(sim, ImageNumPixelRows, ImageNumPixelColumns, num
         synapseCount += 2*len(BoundarySegmentationOnInter1)
 
         # Inhibition from third interneuron (itself inhibited by the presence of a boundary)
-        BoundSegmOnInter3Inhib1Inter1 = sim.Projection(BoundarySegmentationOnInter3, BoundarySegmentationOnInter1, sim.OneToOneConnector(), sim.StaticSynapse(weight=connections['segmentInhib5']))
-        BoundSegmOnInter3Inhib1Inter2 = sim.Projection(BoundarySegmentationOnInter3, BoundarySegmentationOnInter2, sim.OneToOneConnector(), sim.StaticSynapse(weight=connections['segmentInhib5']))
+        BoundSegmOnInter3Inhib1Inter1 = sim.Projection(BoundarySegmentationOnInter3, BoundarySegmentationOnInter1, sim.OneToOneConnector(), sim.StaticSynapse(weight=connections['SegmentInhib5']))
+        BoundSegmOnInter3Inhib1Inter2 = sim.Projection(BoundarySegmentationOnInter3, BoundarySegmentationOnInter2, sim.OneToOneConnector(), sim.StaticSynapse(weight=connections['SegmentInhib5']))
         synapseCount += 2*len(BoundarySegmentationOnInter3)
 
         # SurfaceSegmentationOn <-> Interneurons (flow out on interneuron 1 flow in on interneuron 2) ; fliplr to use the connections in the way "target indexes --> source indexes"
-        BoundSegmOnToInter2 = sim.Projection(BoundarySegmentationOn,       BoundarySegmentationOnInter2, sim.FromListConnector(ST2),               sim.StaticSynapse(weight=connections['segmentExcite1']))
-        Inter1ToBoundSegmOn = sim.Projection(BoundarySegmentationOnInter1, BoundarySegmentationOn,       sim.FromListConnector(numpy.fliplr(ST2)), sim.StaticSynapse(weight=connections['segmentExcite1']))
+        BoundSegmOnToInter2 = sim.Projection(BoundarySegmentationOn,       BoundarySegmentationOnInter2, sim.FromListConnector(ST2),               sim.StaticSynapse(weight=connections['SegmentExcite1']))
+        Inter1ToBoundSegmOn = sim.Projection(BoundarySegmentationOnInter1, BoundarySegmentationOn,       sim.FromListConnector(numpy.fliplr(ST2)), sim.StaticSynapse(weight=connections['SegmentExcite1']))
         synapseCount += 2*len(ST2)
 
         # V2layer23 -> Segmentation Interneurons (all boundaries open flow by inhibiting third interneuron)
-        V223ToBoundSegmOnInter3 =  sim.Projection(V2layer23, BoundarySegmentationOnInter3,  sim.FromListConnector(ST3), sim.StaticSynapse(weight=connections['segmentInhib3']))
+        V223ToBoundSegmOnInter3 =  sim.Projection(V2layer23, BoundarySegmentationOnInter3,  sim.FromListConnector(ST3), sim.StaticSynapse(weight=connections['SegmentInhib3']))
         synapseCount += len(ST3)
 
         # BoundarySegmentation -> V2layer4 (gating)
-        BoundSegmOnInhibV24 = sim.Projection(BoundarySegmentationOn, V2layer4, sim.FromListConnector(ST4), sim.StaticSynapse(weight=connections['segmentInhib']))
+        BoundSegmOnInhibV24 = sim.Projection(BoundarySegmentationOn, V2layer4, sim.FromListConnector(ST4), sim.StaticSynapse(weight=connections['SegmentInhib']))
         synapseCount += len(ST4)
 
     sys.stdout.write('done. \n'+str(synapseCount)+' network connections created.\n')

@@ -126,7 +126,7 @@ sim, network = buildNetworkAndConnections(sim, ImageNumPixelRows, ImageNumPixelC
 
 LGNBrightInput = network.get_population("LGNBrightInput")
 LGNDarkInput   = network.get_population("LGNDarkInput")
-V2layer23      = network.get_population("V1layer6P1")
+V2layer23      = network.get_population("V2layer23")
 LGNBright      = network.get_population("LGNBright")
 V2layer23.record("spikes")
 LGNBright.record("spikes")
@@ -198,10 +198,10 @@ for timeStep in range(nTimeSteps):
     plotDensityLGNBright   = [[0 for j in range(ImageNumPixelColumns)] for i in range(ImageNumPixelRows)]
     V2layer23SpikeCountUpToNow = V2layer23.get_spike_counts().values()
     LGNBrightSpikeCountUpToNow = LGNBright.get_spike_counts().values()
-    for i in range(0, numPixelRows):                    # Rows
-        for j in range(0, numPixelColumns):             # Columns
-            for h in range(0, numSegmentationLayers):   # Segmentation layers
-                for k in range(0, numOrientations):     # Orientations
+    for h in range(0, numSegmentationLayers):        # Segmentation layers
+        for k in range(0, numOrientations):          # Orientations
+            for i in range(0, numPixelRows):         # Rows
+                for j in range(0, numPixelColumns):  # Columns
                     plotDensityOrientation[k][h][i][j] += V2layer23SpikeCountUpToNow[h*numOrientations*numPixelRows*numPixelColumns + k*numPixelRows*numPixelColumns + i*numPixelColumns + j] - cumplotDensityOrientation[k][h][i][j]  # spike count for the current step
                     cumplotDensityOrientation[k][h][i][j] += plotDensityOrientation[k][h][i][j]  # update cumulative spikes
 
