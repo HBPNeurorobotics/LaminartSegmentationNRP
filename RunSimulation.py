@@ -55,49 +55,49 @@ connections = {
 
     # V1 layers
     'V1_6To4Excite'           :      1.0,
-    'V1_6To4Inhib'            : 0.0, #    -1.0,
+    'V1_6To4Inhib'            :     -1.0,
     'V1_23To6Excite'          :    100.0,
-    'V1_ComplexExcite'        : 0.0, #   500.0,
-    'V1_ComplexInhib'         : 0.0, #  -500.0,
-    'V1_FeedbackExcite'       : 0.0, #  500.0,
-    'V1_NegFeedbackInhib'     : 0.0, # -1500.0,
-    'V1_InterInhib'           : 0.0, # -1500.0,
-    'V1_CrossInhib'           : 0.0, # -1000.0,
-    'V1_EndCutExcite'         : 0.0, #  1500.0,
+    'V1_ComplexExcite'        :    500.0,
+    'V1_ComplexInhib'         :   -500.0,
+    'V1_FeedbackExcite'       :    500.0,
+    'V1_NegFeedbackInhib'     :  -1500.0,
+    'V1_InterInhib'           :  -1500.0,
+    'V1_CrossInhib'           :  -1000.0,
+    'V1_EndCutExcite'         :   1500.0,
     'V1_ToV2Excite'           :  10000.0,
 
     # V2 layers
     'V2_6To4Excite'           :      1.0,
-    'V2_6To4Inhib'            : 0.0, #   -20.0,
+    'V2_6To4Inhib'            :    -20.0,
     'V2_23To6Excite'          :    100.0,
     'V2_ComplexExcite'        :    500.0,
-    'V2_ComplexInhib'         : 0.0, # -1000.0,
-    'V2_ComplexInhib2'        : 0.0, #   -100.0,
-    'V2_OrientInhib'          : 0.0, #  -1200.0,
-    'V2_FeedbackExcite'       : 0.0, #   500.0,
-    'V2_NegFeedbackInhib'     : 0.0, #  -800.0,
-    'V2_InterInhib'           : 0.0, # -1500.0,
-    'V2_BoundaryInhib'        : 0.0, # -5000.0,
-    'V2_SegmentInhib'         : 0.0, #-20000.0,
+    'V2_ComplexInhib'         :  -1000.0,
+    'V2_ComplexInhib2'        :   -100.0,
+    'V2_OrientInhib'          :  -1200.0,
+    'V2_FeedbackExcite'       :    500.0,
+    'V2_NegFeedbackInhib'     :   -800.0,
+    'V2_InterInhib'           :  -1500.0,
+    'V2_BoundaryInhib'        :  -5000.0,
+    'V2_SegmentInhib'         : -20000.0,
 
     # V4 layers
-    'V4_BrightnessExcite'     : 0.0, #  2000.0,
-    'V4_BrightnessInhib'      : 0.0, # -2000.0,
-    'V4_BetweenColorsInhib'   : 0.0, # -5000.0,
+    'V4_BrightnessExcite'     :   2000.0,
+    'V4_BrightnessInhib'      :  -2000.0,
+    'V4_BetweenColorsInhib'   :  -5000.0,
 
     # Surface segmentation layers
-    'S_SegmentSignalExcite'   : 0.0, #     1.0,
-    'S_SegmentSpreadExcite'   : 0.0, #  1000.0,
-    'S_SegmentInterInhib'     : 0.0, #  -200.0,
-    'S_SegmentOnOffInhib'     : 0.0, # -5000.0,
+    'S_SegmentSignalExcite'   :      1.0,
+    'S_SegmentSpreadExcite'   :   1000.0,
+    'S_SegmentInterInhib'     :   -200.0,
+    'S_SegmentOnOffInhib'     :  -5000.0,
 
     # Boundary segmentation layers
-    'B_SegmentSignalExcite'   : 0.0, #     0.5,
-    'B_SegmentSpreadExcite'   : 0.0, #  2000.0,
-    'B_SegmentInterInhib'     : 0.0, #  -200.0,
-    'B_SegmentOnOffInhib'     : 0.0, # -5000.0,
-    'B_SegmentTonicInhib'     : 0.0, #-20000.0,
-    'B_SegmentOpenFlowInhib'  : 0.0} #  -150.0}
+    'B_SegmentSignalExcite'   :      0.5,
+    'B_SegmentInterInhib'     :   -200.0,
+    'B_SegmentOnOffInhib'     :  -5000.0,
+    'B_SegmentSpreadExcite'   :   2000.0,
+    'B_SegmentTonicInhib'     : -20000.0,
+    'B_SegmentOpenFlowInhib' : -150.0}
 
 # Orientation filters parameters
 numOrientations = 2                       # number of orientations   (2, 4 or 8 ; 8 is experimental)
