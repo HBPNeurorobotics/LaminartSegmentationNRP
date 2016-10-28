@@ -15,7 +15,7 @@ from createFilters import createFilters, createPoolingConnectionsAndFilters
 
 # Function that builds all the layers of the network and connect them according to the Laminart model, enhanced with segmentation ; returns the full network and all the connections
 def buildNetworkAndConnections(sim, ImageNumPixelRows, ImageNumPixelColumns, numOrientations, oriFilterSize, V1PoolSize, V2PoolSize, connections,
-                               normalCellType, tonicCellType, weightScale, numSegmentationLayers, useBoundarySegmentation, useSurfaceSegmentation):
+                               normalCellType, tonicCellType, numSegmentationLayers, useBoundarySegmentation, useSurfaceSegmentation):
 
     #########################################################
     ### Build orientation filters and connection patterns ###
@@ -27,10 +27,11 @@ def buildNetworkAndConnections(sim, ImageNumPixelRows, ImageNumPixelColumns, num
     numPixelRows = ImageNumPixelRows + 1        # height for oriented neurons (placed between un-oriented pixels)
     numPixelColumns = ImageNumPixelColumns + 1  # width for oriented neurons (placed between un-oriented pixels)
 
-    # Scale the connections, set the orientation filters (orientation kernels, V1 and V2 layer23 pooling filters)
-    for key, value in connections.items():
-        connections[key] = value*weightScale
+    # Set the orientation filters (orientation kernels, V1 and V2 layer23 pooling filters)
     filters1, filters2 = createFilters(numOrientations, oriFilterSize, sigma2=0.75, Olambda=4)
+
+    print filters1
+
     V1poolingfilters, V1poolingconnections1, V1poolingconnections2 = createPoolingConnectionsAndFilters(numOrientations, VPoolSize=V1PoolSize, sigma2=4.0, Olambda=5)
     V2poolingfilters, V2poolingconnections1, V2poolingconnections2 = createPoolingConnectionsAndFilters(numOrientations, VPoolSize=V2PoolSize, sigma2=26.0, Olambda=9)
 

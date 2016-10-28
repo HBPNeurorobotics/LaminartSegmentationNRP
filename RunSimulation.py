@@ -12,17 +12,17 @@ from images2gif import writeGif
 ####################################
 
 # How time goes
-dt = 1.0                    # (ms) time step for network updates
-stepDuration = 50.0         # (ms) time step for visual input and segmentation signal updates
-synDelay = 2.0              # (ms) ??? check, car avec toutes les layers ca peut faire de la merde
-simTime = 1000.0            # (ms)
+dt = 1.0                   # (ms) time step for network updates
+stepDuration = 50.0        # (ms) time step for visual input and segmentation signal updates
+synDelay = 2.0             # (ms) ??? check, car avec toutes les layers ca peut faire de la merde
+simTime = 1000.0           # (ms)
 nTimeSteps = numpy.int(simTime/stepDuration)
-sim.setup(timestep=dt)
+sim.setup(timestep=dt, min_delay=1.0, max_delay=10.0)
 
 # General parameters
 fileName = "Test"          # would be removed if it is in the NRP
 input, ImageNumPixelRows, ImageNumPixelColumns = setInput.readAndCropBMP(fileName, onlyZerosAndOnes=0)
-weightScale = 1.0		   # general weight for all connections between neurons
+weightScale = 10.0		   # general weight for all connections between neurons
 normalCellParams = {
     'i_offset'   : 0.0,    # (nA)
     'tau_m'      : 10.0,   # (ms)
@@ -55,75 +55,77 @@ connections = {
 
     # V1 layers
     'V1_6To4Excite'           :      1.0,
-    'V1_6To4Inhib'            :     -1.0,
+    'V1_6To4Inhib'            : 0.0, #    -1.0,
     'V1_23To6Excite'          :    100.0,
-    'V1_ComplexExcite'        :    500.0,
-    'V1_ComplexInhib'         :   -500.0,
-    'V1_FeedbackExcite'       :    500.0,
-    'V1_NegFeedbackInhib'     :  -1500.0,
-    'V1_InterInhib'           :  -1500.0,
-    'V1_CrossInhib'           :  -1000.0,
-    'V1_EndCutExcite'         :   1500.0,
+    'V1_ComplexExcite'        : 0.0, #   500.0,
+    'V1_ComplexInhib'         : 0.0, #  -500.0,
+    'V1_FeedbackExcite'       : 0.0, #  500.0,
+    'V1_NegFeedbackInhib'     : 0.0, # -1500.0,
+    'V1_InterInhib'           : 0.0, # -1500.0,
+    'V1_CrossInhib'           : 0.0, # -1000.0,
+    'V1_EndCutExcite'         : 0.0, #  1500.0,
     'V1_ToV2Excite'           :  10000.0,
 
     # V2 layers
     'V2_6To4Excite'           :      1.0,
-    'V2_6To4Inhib'            :    -20.0,
+    'V2_6To4Inhib'            : 0.0, #   -20.0,
     'V2_23To6Excite'          :    100.0,
     'V2_ComplexExcite'        :    500.0,
-    'V2_ComplexInhib'         :  -1000.0,
-    'V2_ComplexInhib2'        :   -100.0,
-    'V2_OrientInhib'          :  -1200.0,
-    'V2_FeedbackExcite'       :    500.0,
-    'V2_NegFeedbackInhib'     :   -800.0,
-    'V2_InterInhib'           :  -1500.0,
-    'V2_BoundaryInhib'        :  -5000.0,
-    'V2_SegmentInhib'         : -20000.0,
+    'V2_ComplexInhib'         : 0.0, # -1000.0,
+    'V2_ComplexInhib2'        : 0.0, #   -100.0,
+    'V2_OrientInhib'          : 0.0, #  -1200.0,
+    'V2_FeedbackExcite'       : 0.0, #   500.0,
+    'V2_NegFeedbackInhib'     : 0.0, #  -800.0,
+    'V2_InterInhib'           : 0.0, # -1500.0,
+    'V2_BoundaryInhib'        : 0.0, # -5000.0,
+    'V2_SegmentInhib'         : 0.0, #-20000.0,
 
     # V4 layers
-    'V4_BrightnessExcite'     :   2000.0,
-    'V4_BrightnessInhib'      :  -2000.0,
-    'V4_BetweenColorsInhib'   :  -5000.0,
+    'V4_BrightnessExcite'     : 0.0, #  2000.0,
+    'V4_BrightnessInhib'      : 0.0, # -2000.0,
+    'V4_BetweenColorsInhib'   : 0.0, # -5000.0,
 
     # Surface segmentation layers
-    'S_SegmentSignalExcite'   :      1.0,
-    'S_SegmentSpreadExcite'   :   1000.0,
-    'S_SegmentInterInhib'     :   -200.0,
-    'S_SegmentOnOffInhib'     :  -5000.0,
+    'S_SegmentSignalExcite'   : 0.0, #     1.0,
+    'S_SegmentSpreadExcite'   : 0.0, #  1000.0,
+    'S_SegmentInterInhib'     : 0.0, #  -200.0,
+    'S_SegmentOnOffInhib'     : 0.0, # -5000.0,
 
     # Boundary segmentation layers
-    'B_SegmentSignalExcite'   :      0.5,
-    'B_SegmentInterInhib'     :   -200.0,
-    'B_SegmentOnOffInhib'     :  -5000.0,
-    'B_SegmentSpreadExcite'   :   2000.0,
-    'B_SegmentTonicInhib'     : -20000.0,
-    'B_SegmentOpenFlowInhib'  :   -150.0}
+    'B_SegmentSignalExcite'   : 0.0, #     0.5,
+    'B_SegmentSpreadExcite'   : 0.0, #  2000.0,
+    'B_SegmentInterInhib'     : 0.0, #  -200.0,
+    'B_SegmentOnOffInhib'     : 0.0, # -5000.0,
+    'B_SegmentTonicInhib'     : 0.0, #-20000.0,
+    'B_SegmentOpenFlowInhib'  : 0.0} #  -150.0}
 
 # Orientation filters parameters
-numOrientations = 2		                 # number of orientations (2, 4 or 8 ; 8 is experimental)
-oriFilterSize = 4                        # better as an even number (filtering from LGN to V1) ; 4 is original
-V1PoolSize = 3                           # better as an odd number (pooling in V1) ; 3 is original
-V2PoolSize = 7                           # better as an odd number (pooling in V2) ; 7 is original
-numPixelRows    = ImageNumPixelRows+1    # number of rows for the oriented grid (in between un-oriented pixels)
-numPixelColumns = ImageNumPixelColumns+1 # same for columns
+numOrientations = 2                       # number of orientations   (2, 4 or 8 ; 8 is experimental)
+oriFilterSize = 4                         # better as an even number (how V1 pools from LGN) ; 4 is original
+V1PoolSize = 3                            # better as an odd  number (pooling in V1)         ; 3 is original
+V2PoolSize = 7                            # better as an odd  number (pooling in V2)         ; 7 is original
+numPixelRows    = ImageNumPixelRows+1     # number of rows for the oriented grid (in between un-oriented pixels)
+numPixelColumns = ImageNumPixelColumns+1  # same for columns
 
 # Segmentation parameters
-numSegmentationLayers = 3        # number of segmentation layers (usual is 3, minimum is 1)
-useSurfaceSegmentation = 0       # use segmentation that flows across closed shapes
-useBoundarySegmentation = 1      # use segmentation that flows along connected boundaries
-useSDPropToDist = 0			     # if 1, segmentationTargetLocationSD ~ dist(segmentationTargetLocation;fix.point)
-minSD = 3                        # minimum segmentationTargetLocationSD, (e.g. sending segmentation signals around fovea)
-rateSD = 0.1                     # how much segmentationTargetLocationSD grows with excentricity (pixels SD per pixel excentricity)
-segmentationTargetLocationSD = 8 # standard deviation of where location actually ends up (originally 8) ; in pixels
-segmentationSignalSize = 20	     # even number ; circle diameter where a segmentation signal is triggered ; in pixels
-# if numSegmentationLayers == 1 or fileName in ["Test", "Test2"]:
-#     numSegmentationLayers = 1    # for test cases
-#     useSurfaceSegmentation = 0
-#     useBoundarySegmentation = 0
+numSegmentationLayers = 3                 # number of segmentation layers (usual is 3, minimum is 1)
+useSurfaceSegmentation = 0                # use segmentation that flows across closed shapes
+useBoundarySegmentation = 1               # use segmentation that flows along connected boundaries
+useSDPropToDist = 0                       # if 1, segmentationTargetLocationSD ~ dist(segmentationTargetLocation;fix.point)
+minSD = 3                                 # minimum segmentationTargetLocationSD, (e.g. sending segmentation signals around fovea)
+rateSD = 0.1                              # how much segmentationTargetLocationSD grows with excentricity (pixels SD per pixel excentricity)
+segmentationTargetLocationSD = 8          # standard deviation of where location actually ends up (originally 8) ; in pixels
+segmentationSignalSize = 20               # even number ; circle diameter where a segmentation signal is triggered ; in pixels
+if numSegmentationLayers == 1 or fileName in ["Test", "Test2"]:
+    numSegmentationLayers = 1             # for test cases
+    useSurfaceSegmentation = 0
+    useBoundarySegmentation = 0
 
-# Build the whole network and take the layers that have to be updated during the simulation
+# Scale the weights, and then sends everything to build the whole network and take the layers that have to be updated during the simulation
+for key, value in connections.items():
+    connections[key] = value*weightScale
 sim, network = buildNetworkAndConnections(sim, ImageNumPixelRows, ImageNumPixelColumns, numOrientations, oriFilterSize, V1PoolSize, V2PoolSize, connections,
-                                          normalCellType, tonicCellType, weightScale, numSegmentationLayers, useBoundarySegmentation, useSurfaceSegmentation)
+                                          normalCellType, tonicCellType, numSegmentationLayers, useBoundarySegmentation, useSurfaceSegmentation)
 
 # Take the neuron layers that need to be updated online or that we want to take records of
 LGNBrightInput = network.get_population("LGNBrightInput")
@@ -146,9 +148,9 @@ if useBoundarySegmentation:
 ########################################################################################
 
 # Stuff to plot activity of LGN, V1, V2, etc. layers
+cumplotDensityLGNBright = [[0 for j in range(ImageNumPixelColumns)] for i in range(ImageNumPixelRows)]
 cumplotDensityOrientationV2 = [[[[0 for j in range(numPixelColumns)] for i in range(numPixelRows)] for h in range(numSegmentationLayers)] for k in range(numOrientations)] # TO DEFINE OUTSIDE TRIALS (si jamais)
 cumplotDensityOrientationV1 = [[[0 for j in range(numPixelColumns)] for i in range(numPixelRows)] for k in range(numOrientations)]
-cumplotDensityLGNBright = [[0 for j in range(ImageNumPixelColumns)] for i in range(ImageNumPixelRows)]
 newMaxV1 = 0
 newMaxV2 = 0
 newMaxLGNBright = 0
@@ -203,12 +205,12 @@ for timeStep in range(nTimeSteps):
     sim.run(stepDuration)
 
     # Store results for later plotting
-    plotDensityLGNBright   = [[0 for j in range(ImageNumPixelColumns)] for i in range(ImageNumPixelRows)]
+    plotDensityLGNBright = [[0 for j in range(ImageNumPixelColumns)] for i in range(ImageNumPixelRows)]
     plotDensityOrientationV1 = [[[0 for j in range(numPixelColumns)] for i in range(numPixelRows)] for k in range(numOrientations)]
     plotDensityOrientationV2 = [[[[0 for j in range(numPixelColumns)] for i in range(numPixelRows)] for h in range(numSegmentationLayers)] for k in range(numOrientations)]
+    LGNBrightSpikeCountUpToNow = LGNBright.get_spike_counts().values()
     V1SpikeCountUpToNow = V1.get_spike_counts().values()
     V2SpikeCountUpToNow = V2.get_spike_counts().values()
-    LGNBrightSpikeCountUpToNow = LGNBright.get_spike_counts().values()
 
     # V1 and V2 sampling
     for k in range(0, numOrientations):                    # Orientations
