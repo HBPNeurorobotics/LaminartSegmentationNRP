@@ -46,57 +46,58 @@ tonicCellParams  = {
 normalCellType = sim.IF_curr_alpha(**normalCellParams)  # any neuron in the network
 tonicCellType = sim.IF_curr_alpha(**tonicCellParams)    # tonically active interneurons (inter3 in segmentation network)
 connections = {
-    # Input and LGN
-    'brightInputToLGN'        :   3000.0,
-    'darkInputToLGN'          :   3000.0,
-    'inputToLGN'              :    700.0,
 
-    # V1 or V2
-    'excite6to4'              :      1.0,
-    'inhibit6to4'             :     -1.0,
-    'complexExcit'            :    500.0,
-    'complexInhib'            :   -500.0,
+    # Input and LGN
+    'brightInputToLGN'        :    700.0,
+    'darkInputToLGN'          :    700.0,
+    'LGN_ToV1Excite'          :    400.0,
+    'LGN_ToV4Excite'          :    280.0,
 
     # V1 layers
-    'V1Feedback'              :    500.0,
-    'V1NegFeedback'           :  -1500.0,
-    'endCutExcit'             :   1500.0,
-    '23to6Excite'             :    100.0,
-    'interInhibV1'            :  -1500.0,
-    'crossInhib'              :  -1000.0,
-    'V2toV1'                  :  10000.0,
-    'V2inhibit6to4'           :    -20.0,
+    'V1_6To4Excite'           :      1.0,
+    'V1_6To4Inhib'            :     -1.0,
+    'V1_23To6Excite'          :    100.0,
+    'V1_ComplexExcite'        :    500.0,
+    'V1_ComplexInhib'         :   -500.0,
+    'V1_FeedbackExcite'       :    500.0,
+    'V1_NegFeedbackInhib'     :  -1500.0,
+    'V1_InterInhib'           :  -1500.0,
+    'V1_CrossInhib'           :  -1000.0,
+    'V1_EndCutExcite'         :   1500.0,
+    'V1_ToV2Excite'           :  10000.0,
 
     # V2 layers
-    'V2PoolInhib'             :  -1000.0,
-    'V2PoolInhib2'            :   -100.0,
-    'V2OrientInhib'           :  -1200.0,
-    'V2Feedback'              :    500.0,
-    'V2NegFeedback'           :   -800.0,
-    'interInhibV2'            :  -1500.0,
+    'V2_6To4Excite'           :      1.0,
+    'V2_6To4Inhib'            :    -20.0,
+    'V2_23To6Excite'          :    100.0,
+    'V2_ComplexExcite'        :    500.0,
+    'V2_ComplexInhib'         :  -1000.0,
+    'V2_ComplexInhib2'        :   -100.0,
+    'V2_OrientInhib'          :  -1200.0,
+    'V2_FeedbackExcite'       :    500.0,
+    'V2_NegFeedbackInhib'     :   -800.0,
+    'V2_InterInhib'           :  -1500.0,
+    'V2_BoundaryInhib'        :  -5000.0,
+    'V2_SegmentInhib'         : -20000.0,
 
     # V4 layers
-    'LGNV4excit'              :    280.0,
-    'V4betweenColorInhib'     :  -5000.0,
-    'brightnessInhib'         :  -2000.0,
-    'brightnessExcite'        :   2000.0,
-    'boundaryInhib'           :  -5000.0,
-    'V4inhib'                 :   -200.0,
+    'V4_BrightnessExcite'     :   2000.0,
+    'V4_BrightnessInhib'      :  -2000.0,
+    'V4_BetweenColorsInhib'   :  -5000.0,
 
     # Surface segmentation layers
-    'SegmentInhib'            :  -5000.0,
-    'SegmentInhib2'           : -20000.0,
-    'SegmentExcite'           :      1.0,
-    'BoundaryToSegmentExcite' :   2000.0,
-    'brightnessExcite2'       :   1000.0,
+    'S_SegmentSignalExcite'   :      1.0,
+    'S_SegmentSpreadExcite'   :   1000.0,
+    'S_SegmentInterInhib'     :   -200.0,
+    'S_SegmentOnOffInhib'     :  -5000.0,
 
     # Boundary segmentation layers
-    'SegmentInhib3'           :   -150.0,
-    'SegmentInhib4'           :  -5000.0,
-    'SegmentInhib5'           : -20000.0,
-    'SegmentExcite1'          :   2000.0,
-    'SegmentExcite2'          :      0.5,
-    'SegmentExcite4'          :    500.0}
+    'B_SegmentSignalExcite'   :      0.5,
+    'B_SegmentInterInhib'     :   -200.0,
+    'B_SegmentOnOffInhib'     :  -5000.0,
+    'B_SegmentSpreadExcite'   :   2000.0,
+    'B_SegmentTonicInhib'     : -20000.0,
+    'B_SegmentOpenFlowInhib'  :   -150.0}
 
 # Orientation filters parameters
 numOrientations = 2		                 # number of orientations (2, 4 or 8 ; 8 is experimental)
@@ -115,21 +116,24 @@ minSD = 3                        # minimum segmentationTargetLocationSD, (e.g. s
 rateSD = 0.1                     # how much segmentationTargetLocationSD grows with excentricity (pixels SD per pixel excentricity)
 segmentationTargetLocationSD = 8 # standard deviation of where location actually ends up (originally 8) ; in pixels
 segmentationSignalSize = 20	     # even number ; circle diameter where a segmentation signal is triggered ; in pixels
-if numSegmentationLayers == 1 or fileName in ["Test", "Test2"]:
-    numSegmentationLayers = 1    # for test cases
-    useSurfaceSegmentation = 0
-    useBoundarySegmentation = 0
+# if numSegmentationLayers == 1 or fileName in ["Test", "Test2"]:
+#     numSegmentationLayers = 1    # for test cases
+#     useSurfaceSegmentation = 0
+#     useBoundarySegmentation = 0
 
 # Build the whole network and take the layers that have to be updated during the simulation
 sim, network = buildNetworkAndConnections(sim, ImageNumPixelRows, ImageNumPixelColumns, numOrientations, oriFilterSize, V1PoolSize, V2PoolSize, connections,
                                           normalCellType, tonicCellType, weightScale, numSegmentationLayers, useBoundarySegmentation, useSurfaceSegmentation)
 
+# Take the neuron layers that need to be updated online or that we want to take records of
 LGNBrightInput = network.get_population("LGNBrightInput")
 LGNDarkInput   = network.get_population("LGNDarkInput")
-V2layer23      = network.get_population("V2layer23")
 LGNBright      = network.get_population("LGNBright")
-V2layer23.record("spikes")
+V1             = network.get_population("V1Layer6P1")
+V2             = network.get_population("V2Layer23")
 LGNBright.record("spikes")
+V1.record("spikes")
+V2.record("spikes")
 if useSurfaceSegmentation:
     SurfaceSegmentationOffSignal  = network.get_population("SurfaceSegmentationOffSignal")
     SurfaceSegmentationOnSignal   = network.get_population("SurfaceSegmentationOnSignal")
@@ -141,13 +145,18 @@ if useBoundarySegmentation:
 ### Network is defined, now set up stimulus, segmentation signal and run everything! ###
 ########################################################################################
 
-cumplotDensityOrientation = [[[[0 for j in range(numPixelColumns)] for i in range(numPixelRows)] for h in range(numSegmentationLayers)] for k in range(numOrientations)] # TO DEFINE OUTSIDE TRIALS (si jamais)
+# Stuff to plot activity of LGN, V1, V2, etc. layers
+cumplotDensityOrientationV2 = [[[[0 for j in range(numPixelColumns)] for i in range(numPixelRows)] for h in range(numSegmentationLayers)] for k in range(numOrientations)] # TO DEFINE OUTSIDE TRIALS (si jamais)
+cumplotDensityOrientationV1 = [[[0 for j in range(numPixelColumns)] for i in range(numPixelRows)] for k in range(numOrientations)]
 cumplotDensityLGNBright = [[0 for j in range(ImageNumPixelColumns)] for i in range(ImageNumPixelRows)]
-newMax = 0  # for plotting
+newMaxV1 = 0
+newMaxV2 = 0
 newMaxLGNBright = 0
-outImages = [[] for i in range(numSegmentationLayers)]  # to create animated gifs for V2 boundaries of different segmentation layers
+outImagesV1 = []
+outImagesV2 = [[] for i in range(numSegmentationLayers)]
 outImagesLGNBright = []
 
+# Set input, segmentation signals, run simulation and collect network activities
 for timeStep in range(nTimeSteps):
 
     sys.stdout.write('Current time step: ' + str(timeStep*stepDuration) + ' ms\n')
@@ -194,42 +203,59 @@ for timeStep in range(nTimeSteps):
     sim.run(stepDuration)
 
     # Store results for later plotting
-    plotDensityOrientation = [[[[0 for j in range(numPixelColumns)] for i in range(numPixelRows)] for h in range(numSegmentationLayers)] for k in range(numOrientations)]
     plotDensityLGNBright   = [[0 for j in range(ImageNumPixelColumns)] for i in range(ImageNumPixelRows)]
-    V2layer23SpikeCountUpToNow = V2layer23.get_spike_counts().values()
+    plotDensityOrientationV1 = [[[0 for j in range(numPixelColumns)] for i in range(numPixelRows)] for k in range(numOrientations)]
+    plotDensityOrientationV2 = [[[[0 for j in range(numPixelColumns)] for i in range(numPixelRows)] for h in range(numSegmentationLayers)] for k in range(numOrientations)]
+    V1SpikeCountUpToNow = V1.get_spike_counts().values()
+    V2SpikeCountUpToNow = V2.get_spike_counts().values()
     LGNBrightSpikeCountUpToNow = LGNBright.get_spike_counts().values()
-    for h in range(0, numSegmentationLayers):        # Segmentation layers
-        for k in range(0, numOrientations):          # Orientations
-            for i in range(0, numPixelRows):         # Rows
-                for j in range(0, numPixelColumns):  # Columns
-                    plotDensityOrientation[k][h][i][j] += V2layer23SpikeCountUpToNow[h*numOrientations*numPixelRows*numPixelColumns + k*numPixelRows*numPixelColumns + i*numPixelColumns + j] - cumplotDensityOrientation[k][h][i][j]  # spike count for the current step
-                    cumplotDensityOrientation[k][h][i][j] += plotDensityOrientation[k][h][i][j]  # update cumulative spikes
 
-    for i in range(0, ImageNumPixelRows):               # Rows
-        for j in range(0, ImageNumPixelColumns):        # Columns
+    # V1 and V2 sampling
+    for k in range(0, numOrientations):                    # Orientations
+        for i in range(0, numPixelRows):                   # Rows
+            for j in range(0, numPixelColumns):            # Columns
+                plotDensityOrientationV1[k][i][j] += V1SpikeCountUpToNow[k*numPixelRows*numPixelColumns + i*numPixelColumns + j] - cumplotDensityOrientationV1[k][i][j]  # spike count for the current step
+                cumplotDensityOrientationV1[k][i][j] += plotDensityOrientationV1[k][i][j]  # update cumulative spikes
+                for h in range(0, numSegmentationLayers):  # Segmentation layers
+                    plotDensityOrientationV2[k][h][i][j] += V2SpikeCountUpToNow[h*numOrientations*numPixelRows*numPixelColumns + k*numPixelRows*numPixelColumns + i*numPixelColumns + j] - cumplotDensityOrientationV2[k][h][i][j]  # spike count for the current step
+                    cumplotDensityOrientationV2[k][h][i][j] += plotDensityOrientationV2[k][h][i][j]  # update cumulative spikes
+
+    # LGN sampling
+    for i in range(0, ImageNumPixelRows):                  # Rows
+        for j in range(0, ImageNumPixelColumns):           # Columns
             plotDensityLGNBright[i][j] += LGNBrightSpikeCountUpToNow[i*ImageNumPixelColumns + j] - cumplotDensityLGNBright[i][j]
             cumplotDensityLGNBright[i][j] += plotDensityLGNBright[i][j]  # update cumulative spikes
 
     # Set up images for boundaries
-    maxD = numpy.max(plotDensityOrientation)
-    newMax = max(maxD, newMax)
+    maxDV1 = numpy.max(plotDensityOrientationV1)
+    maxDV2 = numpy.max(plotDensityOrientationV2)
+    newMaxV1 = max(maxDV1, newMaxV1)
+    newMaxV2 = max(maxDV2, newMaxV2)
     if numOrientations == 8:
         rgbMap = numpy.array([[0.,.5,.5], [0.,0.,1.], [.5,0.,.5], [1.,0.,0.], [.5,0.,.5], [0.,0.,1.], [0.,.5,.5], [0.,1.,0.]])
+    dataV1 = numpy.zeros((numPixelRows, numPixelColumns,3), dtype=numpy.uint8)
     for h in range(0, numSegmentationLayers):
-        data = numpy.zeros((numPixelRows, numPixelColumns,3), dtype=numpy.uint8)
-        if maxD > 0:
+        dataV2 = numpy.zeros((numPixelRows, numPixelColumns,3), dtype=numpy.uint8)
+        if maxDV2 > 0:
             for i in range(0, numPixelRows):         # Rows
                 for j in range(0, numPixelColumns):  # Columns
                     if numOrientations==2:           # Vertical and horizontal
-                        data[i][j] = [plotDensityOrientation[0][h][i][j], plotDensityOrientation[1][h][i][j], 0]
+                        dataV1[i][j] = [plotDensityOrientationV1[0][i][j], plotDensityOrientationV1[1][i][j], 0]
+                        dataV2[i][j] = [plotDensityOrientationV2[0][h][i][j], plotDensityOrientationV2[1][h][i][j], 0]
                     if numOrientations==4:           # Vertical, horizontal, either diagonal
-                        diag = max(plotDensityOrientation[0][h][i][j], plotDensityOrientation[2][h][i][j])
-                        data[i][j] = [plotDensityOrientation[1][h][i][j], plotDensityOrientation[3][h][i][j], diag]
+                        diagV1 = max(plotDensityOrientationV1[0][i][j], plotDensityOrientationV1[2][i][j])
+                        diagV2 = max(plotDensityOrientationV2[0][h][i][j], plotDensityOrientationV2[2][h][i][j])
+                        dataV1[i][j] = [plotDensityOrientationV1[1][i][j], plotDensityOrientationV1[3][i][j], diagV1]
+                        dataV2[i][j] = [plotDensityOrientationV2[1][h][i][j], plotDensityOrientationV2[3][h][i][j], diagV2]
                     if numOrientations==8:
-                        temp = [plotDensityOrientation[k][h][i][j] for k in numOrientations]
-                        data[i][j] = rgbMap[numpy.argmax(temp)]*numpy.max(temp)
-        outImages[h].append(data)
+                        tempV1 = [plotDensityOrientationV1[k][i][j] for k in numOrientations]
+                        tempV2 = [plotDensityOrientationV2[k][h][i][j] for k in numOrientations]
+                        dataV1[i][j] = rgbMap[numpy.argmax(tempV1)]*numpy.max(tempV1)
+                        dataV2[i][j] = rgbMap[numpy.argmax(tempV2)]*numpy.max(tempV2)
+        outImagesV2[h].append(dataV2)
+    outImagesV1.append(dataV1)
 
+    # Set up images for LGN
     maxDLGNBright = numpy.max(plotDensityLGNBright)
     newMaxLGNBright = max(maxDLGNBright, newMaxLGNBright)
     if maxDLGNBright > 0:
@@ -238,11 +264,14 @@ for timeStep in range(nTimeSteps):
 # End of time steps: close the simulation
 sim.end()
 
-# Create animated gifs for several neuron layers ; rescale firing rates to max value
+# Create animated gifs for the recorded neuron layers ; rescale firing rates to max value
+if newMaxV1 == 0:
+    newMaxV1 = 1
+writeGif("V1Orientations.GIF", [255/newMaxV1*data for data in outImagesV1], duration=0.2)
 for h in range(0,numSegmentationLayers):
-    if newMax==0:
-        newMax = 1
-    writeGif("V2OrientationsSeg"+str(h)+".GIF", [255/newMax*data for data in outImages[h]], duration=0.2)
+    if newMaxV2==0:
+        newMaxV2 = 1
+    writeGif("V2OrientationsSeg"+str(h)+".GIF", [255/newMaxV2*data for data in outImagesV2[h]], duration=0.2)
 if newMaxLGNBright == 0:
     newMaxLGNBright = 1
 writeGif("LGNBright.GIF", [255/newMaxLGNBright*data for data in outImagesLGNBright], duration=0.2)
