@@ -356,10 +356,6 @@ sim.end()
 
 # Create animated gifs for the recorded neuron layers ; rescale firing rates to max value
 duration = sloMoRate*stepDuration/1000.0
-
-plt.imshow(255/newMaxInput*outImagesInput[0])
-plt.show()
-
 if newMaxInput == 0:
     newMaxInput = 1
 writeGif("InputAndSegSignals.GIF", [255/newMaxInput*data for data in outImagesInput], duration=duration)
