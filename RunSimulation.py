@@ -83,8 +83,8 @@ connections = {
     'V2_SegmentInhib'         :-20.0, #-20000.0,
 
     # V4 layers
-    'V4_BrightnessExcite'     :  2.5, #  2000.0,  3.0 pas mal
-    'V4_BrightnessInhib'      : -2.5, # -2000.0, -3.0 pas mal
+    'V4_BrightnessExcite'     :  3.0, #  2000.0,  3.0 = pas mal
+    'V4_BrightnessInhib'      : -3.0, # -2000.0, -3.0 = pas mal
     'V4_BetweenColorsInhib'   : -5.0, # -5000.0,
 
     # Surface segmentation layers
