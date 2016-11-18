@@ -21,7 +21,7 @@ def buildNetworkAndConnections(sim, ImageNumPixelRows, ImageNumPixelColumns, num
     ### Build orientation filters and connection patterns ###
     #########################################################
 
-    sys.stdout.write('\nSetting up orientation filters...\n')
+    sys.stdout.write('\nSetting up orientation filters...')
 
     # Boundary coordinates (boundaries exist at positions between retinotopic coordinates, so add extra pixel on each side to insure a boundary could exists for retinal pixel)
     numPixelRows = ImageNumPixelRows + 1        # height for oriented neurons (placed between un-oriented pixels)
@@ -66,21 +66,21 @@ def buildNetworkAndConnections(sim, ImageNumPixelRows, ImageNumPixelColumns, num
     # Neural LGN cells will receive input values from LGN
     LGNBrightInput = sim.Population(ImageNumPixelRows*ImageNumPixelColumns, sim.SpikeSourcePoisson(), label="LGNBrightInput")
     LGNDarkInput   = sim.Population(ImageNumPixelRows*ImageNumPixelColumns, sim.SpikeSourcePoisson(), label="LGNDarkInput")
-    LGNBright      = sim.Population(ImageNumPixelRows*ImageNumPixelColumns, normalCellType,           label="LGNBright")
-    LGNDark        = sim.Population(ImageNumPixelRows*ImageNumPixelColumns, normalCellType)
+    LGNBright      = sim.Population(ImageNumPixelRows*ImageNumPixelColumns, normalCellType, label="LGNBright")
+    LGNDark        = sim.Population(ImageNumPixelRows*ImageNumPixelColumns, normalCellType, label="LGNDark")
 
     # Area V1
     sys.stdout.write('V1,...')
     sys.stdout.flush()
 
     # Simple oriented neurons
+    V1Layer6P1 = sim.Population(numOrientations*numPixelRows*numPixelColumns, normalCellType)
+    V1Layer6P2 = sim.Population(numOrientations*numPixelRows*numPixelColumns, normalCellType)
     V1Layer4P1 = sim.Population(numOrientations*numPixelRows*numPixelColumns, normalCellType)
     V1Layer4P2 = sim.Population(numOrientations*numPixelRows*numPixelColumns, normalCellType)
-    V1Layer6P1 = sim.Population(numOrientations*numPixelRows*numPixelColumns, normalCellType, label="V1Layer6P1")
-    V1Layer6P2 = sim.Population(numOrientations*numPixelRows*numPixelColumns, normalCellType)
 
     # Complex cells
-    V1Layer23       = sim.Population(numOrientations*numPixelRows*numPixelColumns, normalCellType)
+    V1Layer23       = sim.Population(numOrientations*numPixelRows*numPixelColumns, normalCellType, label="V1LayerToPlot")
     V1Layer23Pool   = sim.Population(numOrientations*numPixelRows*numPixelColumns, normalCellType)
     V1Layer23Inter1 = sim.Population(numOrientations*numPixelRows*numPixelColumns, normalCellType)
     V1Layer23Inter2 = sim.Population(numOrientations*numPixelRows*numPixelColumns, normalCellType)
@@ -91,21 +91,21 @@ def buildNetworkAndConnections(sim, ImageNumPixelRows, ImageNumPixelColumns, num
     sys.stdout.write('V2,...')
     sys.stdout.flush()
 
-    V2Layer4        = sim.Population(numSegmentationLayers*numOrientations*numPixelRows*numPixelColumns, normalCellType)
-    V2Layer6        = sim.Population(numSegmentationLayers*numOrientations*numPixelRows*numPixelColumns, normalCellType)
-    V2Layer23       = sim.Population(numSegmentationLayers*numOrientations*numPixelRows*numPixelColumns, normalCellType, label="V2Layer23")
-    V2Layer23Pool   = sim.Population(numSegmentationLayers*numOrientations*numPixelRows*numPixelColumns, normalCellType)
     V2Layer23Inter1 = sim.Population(numSegmentationLayers*numOrientations*numPixelRows*numPixelColumns, normalCellType)
     V2Layer23Inter2 = sim.Population(numSegmentationLayers*numOrientations*numPixelRows*numPixelColumns, normalCellType)
+    V2Layer6        = sim.Population(numSegmentationLayers*numOrientations*numPixelRows*numPixelColumns, normalCellType)
+    V2Layer4        = sim.Population(numSegmentationLayers*numOrientations*numPixelRows*numPixelColumns, normalCellType)
+    V2Layer23       = sim.Population(numSegmentationLayers*numOrientations*numPixelRows*numPixelColumns, normalCellType, label="V2LayerToPlot")
+    V2Layer23Pool   = sim.Population(numSegmentationLayers*numOrientations*numPixelRows*numPixelColumns, normalCellType)
 
     # Area V4
     sys.stdout.write('V4,...')
     sys.stdout.flush()
 
-    V4Brightness       = sim.Population(numSegmentationLayers*ImageNumPixelRows*ImageNumPixelColumns,          normalCellType)
+    V4Brightness       = sim.Population(numSegmentationLayers*ImageNumPixelRows*ImageNumPixelColumns,          normalCellType, label="V4Brightness")
     V4InterBrightness1 = sim.Population(numSegmentationLayers*numFlows*ImageNumPixelRows*ImageNumPixelColumns, normalCellType)
     V4InterBrightness2 = sim.Population(numSegmentationLayers*numFlows*ImageNumPixelRows*ImageNumPixelColumns, normalCellType)
-    V4Darkness         = sim.Population(numSegmentationLayers*ImageNumPixelRows*ImageNumPixelColumns,          normalCellType)
+    V4Darkness         = sim.Population(numSegmentationLayers*ImageNumPixelRows*ImageNumPixelColumns,          normalCellType, label="V4Darkness")
     V4InterDarkness1   = sim.Population(numSegmentationLayers*numFlows*ImageNumPixelRows*ImageNumPixelColumns, normalCellType)
     V4InterDarkness2   = sim.Population(numSegmentationLayers*numFlows*ImageNumPixelRows*ImageNumPixelColumns, normalCellType)
 
@@ -121,8 +121,8 @@ def buildNetworkAndConnections(sim, ImageNumPixelRows, ImageNumPixelColumns, num
             SurfaceSegmentationOff       = sim.Population((numSegmentationLayers-1)*ImageNumPixelRows*ImageNumPixelColumns,          normalCellType)
             SurfaceSegmentationOffInter1 = sim.Population((numSegmentationLayers-1)*numFlows*ImageNumPixelRows*ImageNumPixelColumns, normalCellType)
             SurfaceSegmentationOffInter2 = sim.Population((numSegmentationLayers-1)*numFlows*ImageNumPixelRows*ImageNumPixelColumns, normalCellType)
-            SurfaceSegmentationOnSignal  = sim.Population((numSegmentationLayers-1)*ImageNumPixelRows*ImageNumPixelColumns,          normalCellType, label="SurfaceSegmentationOnSignal")
-            SurfaceSegmentationOffSignal = sim.Population((numSegmentationLayers-1)*ImageNumPixelRows*ImageNumPixelColumns,          normalCellType, label="SurfaceSegmentationOffSignal")
+            SurfaceSegmentationOnSignal  = sim.Population((numSegmentationLayers-1)*ImageNumPixelRows*ImageNumPixelColumns, sim.SpikeSourcePoisson(), label="SurfaceSegmentationOnSignal")
+            SurfaceSegmentationOffSignal = sim.Population((numSegmentationLayers-1)*ImageNumPixelRows*ImageNumPixelColumns, sim.SpikeSourcePoisson(), label="SurfaceSegmentationOffSignal")
 
         if useBoundarySegmentation==1:
             # Boundary Segmentation cells
@@ -136,9 +136,8 @@ def buildNetworkAndConnections(sim, ImageNumPixelRows, ImageNumPixelColumns, num
             BoundarySegmentationOff       = sim.Population((numSegmentationLayers-1)*ImageNumPixelRows*ImageNumPixelColumns,          normalCellType)
             BoundarySegmentationOffInter1 = sim.Population((numSegmentationLayers-1)*numFlows*ImageNumPixelRows*ImageNumPixelColumns, normalCellType)
             BoundarySegmentationOffInter2 = sim.Population((numSegmentationLayers-1)*numFlows*ImageNumPixelRows*ImageNumPixelColumns, normalCellType)
-            BoundarySegmentationOnSignal  = sim.Population((numSegmentationLayers-1)*ImageNumPixelRows*ImageNumPixelColumns,          normalCellType, label="BoundarySegmentationOnSignal")
-            BoundarySegmentationOffSignal = sim.Population((numSegmentationLayers-1)*ImageNumPixelRows*ImageNumPixelColumns,          normalCellType, label="BoundarySegmentationOffSignal")
-
+            BoundarySegmentationOnSignal  = sim.Population((numSegmentationLayers-1)*ImageNumPixelRows*ImageNumPixelColumns, sim.SpikeSourcePoisson(), label="BoundarySegmentationOnSignal")
+            BoundarySegmentationOffSignal = sim.Population((numSegmentationLayers-1)*ImageNumPixelRows*ImageNumPixelColumns, sim.SpikeSourcePoisson(), label="BoundarySegmentationOffSignal")
 
     ######################################################################
     ### Neurons layers are defined, now set up connexions between them ###
@@ -156,11 +155,11 @@ def buildNetworkAndConnections(sim, ImageNumPixelRows, ImageNumPixelColumns, num
     sys.stdout.flush()
 
     oriFilterWeight = connections['LGN_ToV1Excite']
-    for k in range(0, numOrientations):                         # Orientations
-        for i2 in range(-oriFilterSize/2, oriFilterSize/2):     # Filter rows
-            for j2 in range(-oriFilterSize/2, oriFilterSize/2): # Filter columns
-                ST = []                                         # Source-Target vector containing indexes of neurons to connect within specific layers
-                ST2 = []                                        # Second Source-Target vector for another connection
+    for k in range(0, numOrientations):                          # Orientations
+        for i2 in range(-oriFilterSize/2, oriFilterSize/2):      # Filter rows
+            for j2 in range(-oriFilterSize/2, oriFilterSize/2):  # Filter columns
+                ST = []                                          # Source-Target vector containing indexes of neurons to connect within specific layers
+                ST2 = []                                         # Second Source-Target vector for another connection
                 for i in range(oriFilterSize/2, numPixelRows-oriFilterSize/2):         # Rows
                     for j in range(oriFilterSize/2, numPixelColumns-oriFilterSize/2):  # Columns
                         if i+i2 >=0 and i+i2<ImageNumPixelRows and j+j2>=0 and j+j2<ImageNumPixelColumns:
@@ -250,8 +249,8 @@ def buildNetworkAndConnections(sim, ImageNumPixelRows, ImageNumPixelColumns, num
                             k*numPixelRows*numPixelColumns + i*numPixelColumns + j))
 
     # Layer 4 -> Layer23 (complex cell connections)
-    V14P1ComplexExcitV123 = sim.Projection(V1Layer4P1, V1Layer23, sim.OneToOneConnector(), sim.StaticSynapse(weight=connections['V1_ComplexExcite']))
-    V14P2ComplexExcitV123 = sim.Projection(V1Layer4P2, V1Layer23, sim.OneToOneConnector(), sim.StaticSynapse(weight=connections['V1_ComplexExcite']))
+    V14P1ComplexExcitV123 = sim.Projection(V1Layer4P1, V1Layer23, sim.OneToOneConnector(), sim.StaticSynapse(weight=connections['V1_4To23Excite']))
+    V14P2ComplexExcitV123 = sim.Projection(V1Layer4P2, V1Layer23, sim.OneToOneConnector(), sim.StaticSynapse(weight=connections['V1_4To23Excite']))
     synapseCount += (len(V1Layer4P1)+len(V1Layer4P2))
 
     # Cross-orientation inhibition
@@ -363,7 +362,7 @@ def buildNetworkAndConnections(sim, ImageNumPixelRows, ImageNumPixelColumns, num
                                                 h*numOrientations*numPixelRows*numPixelColumns + k*numPixelRows*numPixelColumns + (i+i2)*numPixelColumns + (j+j2)))
 
     # V2 Layer 4 -> V2 Layer23 (complex cell connections)
-    V24ToV223 = sim.Projection(V2Layer4, V2Layer23, sim.OneToOneConnector(), sim.StaticSynapse(weight=connections['V2_ComplexExcite']))
+    V24ToV223 = sim.Projection(V2Layer4, V2Layer23, sim.OneToOneConnector(), sim.StaticSynapse(weight=connections['V2_4To23Excite']))
     synapseCount += len(V2Layer4)
 
     # Cross-orientation inhibition
@@ -395,6 +394,10 @@ def buildNetworkAndConnections(sim, ImageNumPixelRows, ImageNumPixelColumns, num
     # Connect Layer 23 cells to Layer 6 cells (folded feedback)
     V223FoldedFeedbackV26 = sim.Projection(V2Layer23, V2Layer6, sim.OneToOneConnector(), sim.StaticSynapse(weight=connections['V2_23To6Excite']))
     synapseCount += len(V2Layer23)
+
+    # # Feedback from V2 to V1 (layer 6)
+    # V2ToV1P1Feedback = sim.Projection(V2Layer6, V1Layer6P1, sim.OneToOneConnector(), sim.StaticSynapse(weight=connections['V1_ToV2Excite']))
+    # V2ToV1P2Feedback = sim.Projection(V2Layer6, V1Layer6P2, sim.OneToOneConnector(), sim.StaticSynapse(weight=connections['V1_ToV2Excite']))
 
     ############# Area V4 filling-in #############
 
@@ -476,7 +479,7 @@ def buildNetworkAndConnections(sim, ImageNumPixelRows, ImageNumPixelColumns, num
     V223BoundInhibV4InterDark2   = sim.Projection(V2Layer23, V4InterDarkness2,   sim.FromListConnector(ST4), sim.StaticSynapse(weight=connections['V2_BoundaryInhib']))
     synapseCount += 4*len(ST4)
 
-    # Strong inhibition between segmentation layers
+    # Strong inhibition between segmentation layers (WHY TWICE?)
     if numSegmentationLayers>1:
         ST = []
         for h in range(0, numSegmentationLayers-1):       # Num layers (not including baseline layer)
@@ -575,7 +578,7 @@ def buildNetworkAndConnections(sim, ImageNumPixelRows, ImageNumPixelColumns, num
         V223InhibV24 = sim.Projection(V2Layer23, V2Layer4, sim.FromListConnector(ST4), sim.StaticSynapse(weight=connections['V2_SegmentInhib']))
         synapseCount += len(ST4)
 
-        # Segmentation -> V2Layer4 (gating) ; way for lower levels to be inhibited by higher ones : through segmentation network)
+        # Segmentation -> V2Layer4 (gating) ; way for lower levels to be inhibited by higher ones : through segmentation network) SHOULDN'T IT BE ACTIVATORY????
         SurfSegmOnInhibV24 = sim.Projection(SurfaceSegmentationOn, V2Layer4, sim.FromListConnector(ST5), sim.StaticSynapse(weight=connections['S_SegmentOnOffInhib']))
         synapseCount += len(ST5)
 
@@ -650,16 +653,24 @@ def buildNetworkAndConnections(sim, ImageNumPixelRows, ImageNumPixelColumns, num
         synapseCount += len(ST3)
 
         # BoundarySegmentation -> V2Layer4 (gating)
-        BoundSegmOnInhibV24 = sim.Projection(BoundarySegmentationOn, V2Layer4, sim.FromListConnector(ST4), sim.StaticSynapse(weight=connections['B_SegmentOnOffInhib']))
+        BoundSegmOnInhibV24 = sim.Projection(BoundarySegmentationOn, V2Layer4, sim.FromListConnector(ST4), sim.StaticSynapse(weight=connections['B_SegmentGatingInhib']))
         synapseCount += len(ST4)
 
     sys.stdout.write('done. \n'+str(synapseCount)+' network connections created.\n')
     sys.stdout.flush()
 
     # Return only the populations that need to be updated online during the simulation and that we want to make a gif of
-    network = LGNBrightInput + LGNDarkInput + V2Layer23 + LGNBright + V1Layer6P1
+    fullNetwork = LGNBrightInput + LGNDarkInput + LGNBright + LGNDark + V1Layer6P1 + V1Layer6P2 + V1Layer4P1 + V1Layer4P2 + V1Layer23 + V1Layer23Pool + V1Layer23Inter1 \
+                  + V1Layer23Inter2 + V2Layer6 + V2Layer4 + V2Layer23 + V2Layer23Pool + V2Layer23Inter1 + V2Layer23Inter2 + V4Brightness + V4Darkness + V4InterBrightness1 \
+                  + V4InterBrightness2 + V4InterDarkness1 + V4InterDarkness2
+    network   = fullNetwork.get_population("LGNBrightInput") + fullNetwork.get_population("LGNDarkInput")  + fullNetwork.get_population("LGNBright")    + fullNetwork.get_population("LGNDark") \
+              + fullNetwork.get_population("V1LayerToPlot")  + fullNetwork.get_population("V2LayerToPlot") + fullNetwork.get_population("V4Brightness") + fullNetwork.get_population("V4Darkness")
     if useSurfaceSegmentation:
-        network += (SurfaceSegmentationOnSignal + SurfaceSegmentationOffSignal)
+        fullNetwork += (SurfaceSegmentationOn + SurfaceSegmentationOnSignal + SurfaceSegmentationOnInter1 + SurfaceSegmentationOnInter2 + SurfaceSegmentationOff
+                        + SurfaceSegmentationOffSignal + SurfaceSegmentationOffInter1 + SurfaceSegmentationOffInter2)
+        network += (fullNetwork.get_population("SurfaceSegmentationOnSignal") + fullNetwork.get_population("SurfaceSegmentationOffSignal"))
     if useBoundarySegmentation:
-        network += (BoundarySegmentationOnSignal + BoundarySegmentationOffSignal)
+        fullNetwork += (BoundarySegmentationOn + BoundarySegmentationOnSignal + BoundarySegmentationOnInter1 + BoundarySegmentationOnInter2 + BoundarySegmentationOnInter3
+                        + BoundarySegmentationOff + BoundarySegmentationOffSignal + BoundarySegmentationOffInter1 + BoundarySegmentationOffInter2)
+        network += (fullNetwork.get_population("BoundarySegmentationOnSignal") + fullNetwork.get_population("BoundarySegmentationOffSignal"))
     return sim, network

@@ -263,13 +263,13 @@ def chooseAddCrop(thisConditionName):
         [addCropX, addCropY] = [15, 20]
     if thisConditionName in ["malania equal assymR 2", "malania equal assymL 2"]:
         [addCropX, addCropY] = [25, 20]
-    if thisConditionName in ["squares 1", "circles 1", "circles 2", "pattern2 1", "pattern2 2", "stars 1", "stars 2",
-                             "stars 6",
+    if thisConditionName in ["circles 1", "circles 2", "pattern2 1", "pattern2 2", "stars 1", "stars 2", "stars 6",
                              "pattern stars 1", "pattern stars 2", "hexagons 1", "hexagons 2", "hexagons 7",
-                             "octagons 1", "octagons 2",
-                             "octagons 7", "irreg1 1", "irreg1 2", "irreg2 1", "irreg2 2", "pattern irregular 1",
-                             "pattern irregular 2"]:
-        [addCropX, addCropY] = [80, 75] # put back 180, 75
+                             "octagons 1", "octagons 2", "octagons 7", "irreg1 1", "irreg1 2", "irreg2 1", "irreg2 2",
+                             "pattern irregular 1", "pattern irregular 2"]:
+        [addCropX, addCropY] = [180, 75]
+    if thisConditionName == "squares 1":
+        [addCropX, addCropY] = [205, 85]
     if thisConditionName in ["circles 3", "stars 3"]:
         [addCropX, addCropY] = [110, 75]
     if thisConditionName in ["circles 4", "hexagons 3", "hexagons 4", "hexagons 5", "hexagons 6", "hexagons 8",
