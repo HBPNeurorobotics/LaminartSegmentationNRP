@@ -1,0 +1,127 @@
+<?xml version="1.0" ?>
+<ns1:bibi xmlns:ns1="http://schemas.humanbrainproject.eu/SP10/2014/BIBI" xmlns:xsi="http://www.w3.org/2001/XMLSchema-instance">
+	<ns1:brainModel>
+		<ns1:file>braitenberg.py</ns1:file>
+		<ns1:populations from="0" population="sensors" to="5" xsi:type="ns1:Range"/>
+		<ns1:populations from="5" population="actors" to="8" xsi:type="ns1:Range"/>
+		<ns1:populations from="0" population="record" to="8" xsi:type="ns1:Range"/>
+	</ns1:brainModel>
+	<ns1:bodyModel>model.sdf</ns1:bodyModel>
+	<ns1:transferFunction src="csv_spike_monitor.py" xsi:type="ns1:PythonTransferFunction"/>
+	<ns1:transferFunction xsi:type="ns1:PythonTransferFunction">
+    #
+    @nrp.NeuronMonitor(nrp.brain.record, nrp.spike_recorder)
+    def all_neurons_monitor(t):
+        return True
+    #
+  </ns1:transferFunction>
+	<ns1:transferFunction xsi:type="ns1:PythonTransferFunction">
+    #
+    from sensor_msgs.msg import JointState
+
+    @nrp.MapVariable(&quot;eye_position&quot;, initial_value=None, scope=nrp.GLOBAL)
+    @nrp.MapRobotSubscriber(&quot;joints&quot;, Topic(&quot;/robot/joints&quot;, JointState))
+    @nrp.Robot2Neuron()
+    def set_eyepos(t, eye_position, joints):
+        joints = joints.value
+        eye_position.value = joints.position[joints.name.index('eye_version')]
+    #
+  </ns1:transferFunction>
+	<ns1:transferFunction xsi:type="ns1:PythonTransferFunction">
+    #
+    from gazebo_msgs.msg import ModelState
+
+    @nrp.MapVariable(&quot;target_freq&quot;, initial_value=0.3)
+    @nrp.MapVariable(&quot;target_ampl&quot;, initial_value=0.3)
+    @nrp.MapVariable(&quot;target_center&quot;, initial_value={'x': 0, 'y': 2.42, 'z': 1.2})
+    @nrp.Neuron2Robot(Topic('/gazebo/set_model_state', ModelState))
+    def move_target(t, target_freq, target_ampl, target_center):
+        from gazebo_msgs.msg import ModelState
+        m = ModelState()
+        frequency = target_freq.value
+        amplitude = target_ampl.value
+        center = target_center.value
+
+        m.model_name = 'Target'
+
+        # set orientation RYP axes
+        m.pose.orientation.x = 0
+        m.pose.orientation.y = 1
+        m.pose.orientation.z = 1
+
+        m.reference_frame = 'world'
+        m.pose.position.x = \
+            center['x'] + np.sin(t * frequency * 2 * np.pi) * (float(amplitude) / 2)
+        m.pose.position.y = center['y']
+        m.pose.position.z = center['z']
+        print m
+        return m
+    #
+  </ns1:transferFunction>
+	<ns1:transferFunction xsi:type="ns1:PythonTransferFunction">
+    #
+    from std_msgs.msg import Float64
+
+    @nrp.MapVariable(&quot;eye_position&quot;, scope=nrp.GLOBAL)
+    @nrp.MapSpikeSink(&quot;result_0_dv&quot;, nrp.brain.actors[1], nrp.leaky_integrator_alpha)
+    @nrp.MapSpikeSink(&quot;result_1_dv&quot;, nrp.brain.actors[2], nrp.leaky_integrator_alpha)
+    @nrp.Neuron2Robot(Topic('/robot/eye_version/pos', Float64))
+    def tf_results(t, eye_position, result_0_dv, result_1_dv):
+        def deg2rad(deg):
+            &quot;&quot;&quot;
+            Degrees to radians conversion function.
+            :param deg: value in degrees
+            :return: value of deg in radians
+            &quot;&quot;&quot;
+            return (float(deg) / 360.) * (2. * np.pi)
+        d = result_1_dv.voltage - result_0_dv.voltage
+        max_mov = 1.0
+        ret = eye_position.value + deg2rad(-((d + 0.03) / 0.09 * 2 * max_mov - max_mov))
+
+        return ret
+    #
+  </ns1:transferFunction>
+	<ns1:transferFunction xsi:type="ns1:PythonTransferFunction">
+    #
+    @nrp.MapRobotSubscriber(&quot;camera&quot;, Topic('/icub_model/left_eye_camera/image_raw', sensor_msgs.msg.Image))
+    @nrp.MapSpikeSource(&quot;red_left_eye&quot;, nrp.brain.sensors[slice(0, 3, 2)], nrp.poisson)
+    @nrp.MapSpikeSource(&quot;red_right_eye&quot;, nrp.brain.sensors[slice(1, 4, 2)], nrp.poisson)
+    @nrp.MapSpikeSource(&quot;green_blue_eye&quot;, nrp.brain.sensors[4], nrp.poisson)
+    @nrp.Robot2Neuron()
+    def eye_sensor_transmit(t, camera, red_left_eye, red_right_eye, green_blue_eye):
+        import math
+        tf = hbp_nrp_cle.tf_framework.tf_lib
+        xy_ball_pos = tf.find_centroid_hsv(camera.value, [50, 100, 100], [70, 255, 255]) \
+            or (160, 120)
+        ae_ball_pos = tf.cam.pixel2angle(xy_ball_pos[0], xy_ball_pos[1])
+        red = 76800.0 / (1.0 + math.exp(-ae_ball_pos[0]))
+
+        red_left_eye.rate = 1000.0 * red / 76800.0
+        red_right_eye.rate = 1000.0 * red / 76800.0
+        green_blue_eye.rate = 1000.0 * (76800.0 - red) / 76800.0
+
+    #
+  </ns1:transferFunction>
+	<ns1:transferFunction xsi:type="ns1:PythonTransferFunction">
+    #
+    from sensor_msgs.msg import JointState
+
+    @nrp.MapRobotSubscriber(&quot;joints&quot;, Topic(&quot;/robot/joints&quot;, JointState))
+    @nrp.Neuron2Robot(Topic('/joint_states', JointState))
+    def filter_joints_for_nice_output_on_frontend(t, joints):
+        from sensor_msgs.msg import JointState
+
+        joints = joints.value
+        to_forward = ['eye_version']
+
+        ret = JointState()
+        ret.header = joints.header
+        ret.name = to_forward
+        ret.position = [joints.position[joints.name.index(x)] for x in to_forward]
+        ret.velocity = [joints.velocity[joints.name.index(x)] for x in to_forward]
+        ret.effort = [joints.effort[joints.name.index(x)] for x in to_forward]
+
+        return ret
+    #
+  </ns1:transferFunction>
+</ns1:bibi>

@@ -185,7 +185,7 @@ def chooseSegmentationSignal(thisConditionName, segmentSignalSize):
     if thisConditionName in ["squares 1", "circles 2", "patterns2 2", "stars 2", "stars 6", "pattern stars 2",
                              "hexagons 2", "hexagons 7", "octagons 2", "octagons 7", "irreg1 2", "irreg2 2",
                              "pattern irregular 2"]:
-        segmentationTargetLocationX = 16 + segmentSignalSize  # aiming for outer edge of square
+        segmentationTargetLocationX = 12 + segmentSignalSize  # aiming for outer edge of square
     # Flanking shape around vernier + 1 on each side (RE-DESTRIBUTE STIMULI!)
     if thisConditionName in ["cuboids", "scrambled cuboids", "squares 2",
                              "circles 3", "circles 4", "circles 5", "circles 6", "triangles 2", "triangles 3",
@@ -228,8 +228,12 @@ def chooseSegmentationSignal(thisConditionName, segmentSignalSize):
     if thisConditionName in ["HalfLineFlanks1", "malania short 1", "malania equal 1", "malania long 1",
                              "malania equal assymR 1", "malania equal assymL 1", "malania short assymR 1", "malania short assymL 1", "malania long assymR 1", "malania long assymL 1"]:
         segmentationTargetLocationX = 8 + segmentSignalSize  # aiming to just touch the flanker = 27
+
+    if thisConditionName in ["malania short 2"]:
+        segmentationTargetLocationX = 32 + segmentSignalSize  # aiming to just touch the outer flanker = 34
+
     # Two flanking lines
-    if thisConditionName in ["HalfLineFlanks2", "malania short 2", "malania equal 2", "malania long 2", "malania equal assymR 2", "malania equal assymL 2"]:
+    if thisConditionName in ["HalfLineFlanks2", "malania equal 2", "malania long 2", "malania equal assymR 2", "malania equal assymL 2"]:
         segmentationTargetLocationX = 16 + segmentSignalSize - 2  # aiming to just touch the outer flanker = 34
     # More than two flanking lines
     if thisConditionName in ["HalfLineFlanks3", "HalfLineFlanks4", "HalfLineFlanks5", "HalfLineFlanks6",
@@ -251,14 +255,16 @@ def chooseAddCrop(thisConditionName):
     [addCropX, addCropY] = [0, 0]
     if thisConditionName in ["vernier"]:
         [addCropX, addCropY] = [50, 15]
-    if thisConditionName in ["malania short 1", "malania short 2", "malania short 4", "malania short 8", "malania short 16",
+    if thisConditionName in ["malania short 2"]:
+        [addCropX, addCropY] = [27, 28]
+    if thisConditionName in ["malania short 1", "malania short 4", "malania short 8", "malania short 16",
                              "malania equal 1", "malania equal 2", "malania equal 4", "malania equal 8", "malania equal 16"]:
         [addCropX, addCropY] = [10, 15]
     if thisConditionName in ["malania long 1", "malania long 2", "malania long 4", "malania long 8", "malania long 16",
                              "malania long assymR 1", "malania long assymL 1", "cuboids"]:
         [addCropX, addCropY] = [10, 10]
     if thisConditionName in ["boxes", "crosses", "boxes and crosses"]:
-        [addCropX, addCropY] = [20, 15]
+        [addCropX, addCropY] = [35, 25]
     if thisConditionName in ["scrambled cuboids", "malania short assymR 1", "malania short assymL 1", "malania equal assymR 1", "malania equal assymL 1"]:
         [addCropX, addCropY] = [15, 20]
     if thisConditionName in ["malania equal assymR 2", "malania equal assymL 2"]:

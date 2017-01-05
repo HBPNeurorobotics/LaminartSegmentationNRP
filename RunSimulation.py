@@ -16,15 +16,17 @@ dt           = 1.0     # (ms) time step for network updates
 stepDuration = 50.0    # (ms) time step for visual input and segmentation signal updates
 simTime      = 1000.0  # (ms)
 nTimeSteps   = numpy.int(simTime/stepDuration)
-sloMoRate    = 4.0     # how much the GIFs are slowed vs real time
+sloMoRate    = 4.0     # how much the GIFs are slowed vs real time, default is 4.0
 sim.setup(timestep=dt, min_delay=1.0, max_delay=10.0)  # delays in ms
 
 # General parameters
-fileName = "squares 1"          # this would be removed if it is in the NRP
+fileName = "squares 2"     # this would be removed if it is in the NRP
 input, ImageNumPixelRows, ImageNumPixelColumns = setInput.readAndCropBMP(fileName, onlyZerosAndOnes=0)
-print "Input image dimension [Rows, Columns] = " + str([ImageNumPixelRows,ImageNumPixelColumns])
-weightScale = 1.0          # general weight for all connections between neurons
-normalCellParams = {       # any neuron in the network
+print "Input image dimensions of " + fileName + ": [Rows, Columns] = " + str([ImageNumPixelRows,ImageNumPixelColumns])
+weightScale   = 1.0        # general weight for all connections between neurons
+constantInput = 0.5        # input given to the tonic interneuron layer and to the top-down activated segmentation neurons
+inputPoisson  = 0          # 1 for a poisson spike source input, 0 for a DC current input
+cellParams = {             # parameters for any neuron in the network
     'i_offset'   :   0.0,  # (nA)
     'tau_m'      :  10.0,  # (ms)
     'tau_syn_E'  :   2.0,  # (ms)
@@ -32,75 +34,66 @@ normalCellParams = {       # any neuron in the network
     'tau_refrac' :   2.0,  # (ms)
     'v_rest'     : -70.0,  # (mV)
     'v_reset'    : -70.0,  # (mV)
-    'v_thresh'   : -50.0,  # (mV) -55.0 is NEST standard (but too high here)
+    'v_thresh'   : -56.0,  # (mV) -55.0 is NEST standard, -56.0 good for the current setup
     'cm'         :   0.25} # (nF)
-tonicCellParams  = {       # tonically active interneurons (inter3 in segmentation network)
-    'i_offset'   :   1.5,  # (nA) 1.5 = pas mal
-    'tau_m'      :  10.0,  # (ms)
-    'tau_syn_E'  :   2.0,  # (ms)
-    'tau_syn_I'  :   2.0,  # (ms)
-    'tau_refrac' :   2.0,  # (ms)
-    'v_rest'     : -70.0,  # (mV)
-    'v_reset'    : -70.0,  # (mV)
-    'v_thresh'   : -50.0,  # (mV) -55.0 is NEST standard
-    'cm'         :   0.25} # (nF)
-normalCellType = sim.IF_curr_alpha(**normalCellParams)
-tonicCellType  = sim.IF_curr_alpha(**tonicCellParams)
+cellType = sim.IF_curr_alpha(**cellParams)
 connections = {
     # Input and LGN
-    'brightInputToLGN'        : 10.0, #   700.0
-    'darkInputToLGN'          : 10.0, #   700.0
-    'LGN_ToV1Excite'          :  2.0, #   400.0
-    'LGN_ToV4Excite'          :  0.5, #   280.0,
+    'brightInputToLGN'        :  0.1,   # only useful if inputDC == 1
+    'darkInputToLGN'          :  0.1,   # only useful if inputDC == 1
+    'LGN_ToV1Excite'          :  0.4,   #   400.0
+    'LGN_ToV4Excite'          :  0.28,  #   280.0,
 
     # V1 layers
-    'V1_6To4Excite'           :  1.0, #     1.0,
-    'V1_6To4Inhib'            : -1.0, #    -1.0,
-    'V1_4To23Excite'          :  1.0, #   500.0,
-    'V1_23To6Excite'          :  1.0, #   100.0,
-    'V1_ComplexExcite'        :  1.0, #   500.0,
-    'V1_ComplexInhib'         : -1.0, #  -500.0,
-    'V1_FeedbackExcite'       :  1.0, #   500.0,
-    'V1_NegFeedbackInhib'     : -1.5, # -1500.0,
-    'V1_InterInhib'           : -1.5, # -1500.0,
-    'V1_CrossInhib'           : -1.0, # -1000.0,
-    'V1_EndCutExcite'         :  1.5, #  1500.0,
-    'V1_ToV2Excite'           : 10.0, # 10000.0,
+    'V1_6To4Excite'           :  0.001, #     1.0,
+    'V1_6To4Inhib'            : -0.001, #    -1.0,
+    'V1_4To23Excite'          :  0.5,   #   500.0,
+    'V1_23To6Excite'          :  0.1,   #   100.0,
+    'V1_ComplexExcite'        :  0.5,   #   500.0,
+    'V1_ComplexInhib'         : -0.5,   #  -500.0,
+    'V1_FeedbackExcite'       :  0.5,   #   500.0,
+    'V1_NegFeedbackInhib'     : -1.5,   # -1500.0,
+    'V1_InterInhib'           : -1.5,   # -1500.0,
+    'V1_CrossOriInhib'        : -1.0,   # -1000.0,
+    'V1_EndCutExcite'         :  1.5,   #  1500.0,
+    'V1_ToV2Excite'           :  10.0,  # 10000.0,
 
     # V2 layers
-    'V2_6To4Excite'           :  1.0, #     1.0,
-    'V2_6To4Inhib'            : -1.0, #   -20.0,
-    'V2_4To23Excite'          :  1.0, #   500.0,
-    'V2_23To6Excite'          :  1.0, #   100.0,
-    'V2_ComplexExcite'        :  0.5, #   500.0,
-    'V2_ComplexInhib'         : -1.0, # -1000.0,
-    'V2_ComplexInhib2'        : -0.1, #  -100.0,
-    'V2_OrientInhib'          : -1.0, # -1200.0,
-    'V2_FeedbackExcite'       :  0.5, #   500.0,
-    'V2_NegFeedbackInhib'     : -1.0, #  -800.0,
-    'V2_InterInhib'           : -1.5, # -1500.0,
-    'V2_BoundaryInhib'        : -5.0, # -5000.0,
-    'V2_SegmentInhib'         :-20.0, #-20000.0,
+    'V2_6To4Excite'           :  0.001, #     1.0,
+    'V2_6To4Inhib'            : -0.02,  #   -20.0,
+    'V2_4To23Excite'          :  0.5,   #   500.0,
+    'V2_23To6Excite'          :  0.1,   #   100.0,
+    'V2_ToV1FeedbackExcite'   :  1.0,   #   (not used at the moment)
+    'V2_ComplexExcite'        :  0.5,   #   500.0,
+    'V2_ComplexInhib'         : -1.0,   # -1000.0,
+    'V2_ComplexInhib2'        : -0.1,   #  -100.0,
+    'V2_CrossOriInhib'        : -1.2,   # -1200.0,
+    'V2_FeedbackExcite'       :  0.5,   #   500.0,
+    'V2_NegFeedbackInhib'     : -0.8,   #  -800.0,
+    'V2_InterInhib'           : -1.5,   # -1500.0,
+    'V2_BoundaryInhib'        : -5.0,   # -5000.0,
+    'V2_SegmentInhib'         :-20.0,   #-20000.0, TRY TO ADAPT THIS TO THE NEURNO THRESHOLD POTENTIAL
 
     # V4 layers
-    'V4_BrightnessExcite'     :  2.5, #  2000.0,  3.0 pas mal
-    'V4_BrightnessInhib'      : -2.5, # -2000.0, -3.0 pas mal
-    'V4_BetweenColorsInhib'   : -5.0, # -5000.0,
+    'V4_BrightnessExcite'     :  2.0,   #  2000.0,
+    'V4_BrightnessInhib'      : -2.0,   # -2000.0,
+    'V4_BetweenColorsInhib'   : -5.0,   # -5000.0,
 
     # Surface segmentation layers
-    'S_SegmentSignalExcite'   :  1.0, #     1.0,
-    'S_SegmentSpreadExcite'   :  1.0, #  1000.0,
-    'S_SegmentInterInhib'     : -0.2, #  -200.0,
-    'S_SegmentOnOffInhib'     : -5.0, # -5000.0,
+    'S_SegmentSpreadExcite'   :  1.0,   #  1000.0,
+    'S_SegmentInterInhib'     : -0.2,   #  -200.0,
+    'S_SegmentOnOffInhib'     : -5.0,   # -5000.0,
+    'S_SegmentGatingInhib'    : -5.0,   # -5000.0,
 
     # Boundary segmentation layers
-    'B_SegmentSignalExcite'   :  1.0, #     0.5,
-    'B_SegmentInterInhib'     : -0.2, #  -200.0,
-    'B_SegmentOnOffInhib'     : -5.0, # -5000.0,
-    'B_SegmentGatingInhib'    : -5.0, # -5000.0,
-    'B_SegmentSpreadExcite'   :  2.0, #  2000.0,
-    'B_SegmentTonicInhib'     :-20.0, #-20000.0,
-    'B_SegmentOpenFlowInhib'  : -0.5} #  -150.0}
+    'B_SegmentInterInhib'     : -0.2,   #  -200.0,
+    'B_SegmentOnOffInhib'     : -5.0,   # -5000.0,
+    'B_SegmentGatingInhib'    : -5.0,   # -5000.0,
+    'B_SegmentSpreadExcite'   :  2.0,   #  2000.0,
+    'B_SegmentTonicInhib'     :-20.0,   #-20000.0,
+    'B_SegmentOpenFlowInhib'  : -0.15}  #  -150.0}
+for key, value in connections.items():
+    connections[key] = value*weightScale
 
 # Orientation filters parameters
 numOrientations = 2                       # number of orientations   (2, 4 or 8 ; 8 is experimental)
@@ -111,28 +104,26 @@ numPixelRows    = ImageNumPixelRows+1     # number of rows for the oriented grid
 numPixelColumns = ImageNumPixelColumns+1  # same for columns
 
 # Segmentation parameters
-numSegmentationLayers   = 3               # number of segmentation layers (usual is 3, minimum is 1)
-useSurfaceSegmentation  = 0               # use segmentation that flows across closed shapes
-useBoundarySegmentation = 1               # use segmentation that flows along connected boundaries
-useSDPropToDist = 0                       # if 1, segmentationTargetLocationSD ~ dist(segmentationTargetLocation;fix.point)
-minSD  = 3                                # minimum segmentationTargetLocationSD, (e.g. sending segmentation signals around fovea)
-rateSD = 0.1                              # how much segmentationTargetLocationSD grows with excentricity (pixels SD per pixel excentricity)
-segmentationTargetLocationSD = 4          # standard deviation of where location actually ends up (originally 8) ; in pixels
-segmentationSignalSize = 20               # even number ; circle diameter where a segmentation signal is triggered ; in pixels
-if numSegmentationLayers == 1 or fileName in ["Test", "Test2"]:
-    numSegmentationLayers   = 1           # for test cases
-    useSurfaceSegmentation  = 0
-    useBoundarySegmentation = 0
+numSegmentationLayers        = 3          # number of segmentation layers (usual is 3, minimum is 1)
+useSurfaceSegmentation       = 0          # use segmentation that flows across closed shapes
+useBoundarySegmentation      = 1          # use segmentation that flows along connected boundaries
+useSDPropToDist              = 0          # if 1, segmentationTargetLocationSD ~ dist(segmentationTargetLocation;fix.point)
+minSD                        = 3          # minimum segmentationTargetLocationSD, (e.g. sending segmentation signals around fovea)
+rateSD                       = 0.1        # how much segmentationTargetLocationSD grows with excentricity (pixels SD per pixel excentricity)
+segmentationTargetLocationSD = 0          # standard deviation of where location actually ends up (originally 8) ; in pixels
+segmentationSignalSize       = 20         # even number ; circle diameter where a segmentation signal is triggered ; in pixels
+segmentationSignalStart      = 100.0      # in ms, start of the segmentation signal (too soon and the segmentation acts on transient boundaries)
+segLocX, segLocY             = setInput.chooseSegmentationSignal(fileName, segmentationSignalSize)
+if numSegmentationLayers == 1 or fileName in ["Test", "Test2", "Test3"]:
+    numSegmentationLayers    = 1          # for small tests (no segmentation)
+    useSurfaceSegmentation   = 0
+    useBoundarySegmentation  = 0
 
-# Scale the weights, and then sends everything to build the whole network and take the layers that have to be updated during the simulation
-for key, value in connections.items():
-    connections[key] = value*weightScale
-sim, network = buildNetworkAndConnections(sim, ImageNumPixelRows, ImageNumPixelColumns, numOrientations, oriFilterSize, V1PoolSize, V2PoolSize, connections,
-                                          normalCellType, tonicCellType, numSegmentationLayers, useBoundarySegmentation, useSurfaceSegmentation)
+# Build the whole network and take the layers that have to be updated during the simulation (will modify sim)
+network = buildNetworkAndConnections(sim, ImageNumPixelRows, ImageNumPixelColumns, numOrientations, oriFilterSize, V1PoolSize, V2PoolSize,
+                                     connections, cellType, numSegmentationLayers, useBoundarySegmentation, useSurfaceSegmentation)
 
 # Take the neuron layers that need to be updated online or that we want to take records of
-LGNBrightInput = network.get_population("LGNBrightInput")
-LGNDarkInput   = network.get_population("LGNDarkInput")
 LGNBright      = network.get_population("LGNBright")
 LGNDark        = network.get_population("LGNDark")
 V1             = network.get_population("V1LayerToPlot")
@@ -145,12 +136,19 @@ V1       .record("spikes")
 V2       .record("spikes")
 V4Bright .record("spikes")
 V4Dark   .record("spikes")
-if useSurfaceSegmentation:
-    SurfaceSegmentationOffSignal  = network.get_population("SurfaceSegmentationOffSignal")
-    SurfaceSegmentationOnSignal   = network.get_population("SurfaceSegmentationOnSignal")
-if useBoundarySegmentation:
-    BoundarySegmentationOffSignal = network.get_population("BoundarySegmentationOffSignal")
-    BoundarySegmentationOnSignal  = network.get_population("BoundarySegmentationOnSignal")
+if inputPoisson:
+    LGNBrightInput = sim.Population(ImageNumPixelRows*ImageNumPixelColumns, sim.SpikeSourcePoisson())
+    LGNDarkInput   = sim.Population(ImageNumPixelRows*ImageNumPixelColumns, sim.SpikeSourcePoisson())
+    sim.Projection(LGNBrightInput, LGNBright, sim.OneToOneConnector(), sim.StaticSynapse(weight=connections['brightInputToLGN']))
+    sim.Projection(LGNDarkInput,   LGNDark  , sim.OneToOneConnector(), sim.StaticSynapse(weight=connections['darkInputToLGN']))
+if numSegmentationLayers > 1:
+    if useSurfaceSegmentation:
+        SurfaceSegmentationOff  = network.get_population("SurfaceSegmentationOff")
+        SurfaceSegmentationOn   = network.get_population("SurfaceSegmentationOn")
+    if useBoundarySegmentation:
+        BoundarySegmentationOff = network.get_population("BoundarySegmentationOff")
+        BoundarySegmentationOn  = network.get_population("BoundarySegmentationOn")
+        network.get_population("BoundarySegmentationOnInter3").inject(sim.DCSource(amplitude=constantInput, start=0.0, stop=simTime))
 
 ########################################################################################
 ### Network is defined, now set up stimulus, segmentation signal and run everything! ###
@@ -183,25 +181,32 @@ for timeStep in range(nTimeSteps):
     sys.stdout.write('Current time step: ' + str(timeStep*stepDuration) + ' ms\n')
 
     # Set LGN input, using the image input
-    inputToPlot = input.copy()                 # Track the input (when it will not be constant)
+    inputToPlot = input.copy()            # Track the input (when it will not be constant)
     for i in range(ImageNumPixelRows):         # Rows
         for j in range(ImageNumPixelColumns):  # Columns
-            LGNBrightInput[i*ImageNumPixelColumns + j].rate     = 1000.0*max(0.0, (input[i][j]/127.0-1.0))
-            LGNDarkInput  [i*ImageNumPixelColumns + j].rate     = 1000.0*max(0.0, 1.0-(input[i][j]/127.0))
-            LGNBrightInput[i*ImageNumPixelColumns + j].start    = timeStep*stepDuration
-            LGNDarkInput  [i*ImageNumPixelColumns + j].start    = timeStep*stepDuration
-            LGNBrightInput[i*ImageNumPixelColumns + j].duration = stepDuration
-            LGNDarkInput  [i*ImageNumPixelColumns + j].duration = stepDuration
+
+            if inputPoisson:
+                LGNBrightInput[i*ImageNumPixelColumns + j].rate     = 500.0*max(0.0, (input[i][j]/127.0-1.0))
+                LGNDarkInput  [i*ImageNumPixelColumns + j].rate     = 500.0*max(0.0, 1.0-(input[i][j]/127.0))
+                LGNBrightInput[i*ImageNumPixelColumns + j].start    = timeStep*stepDuration # not sure if these 4 lines are necessary
+                LGNDarkInput  [i*ImageNumPixelColumns + j].start    = timeStep*stepDuration
+                LGNBrightInput[i*ImageNumPixelColumns + j].duration = stepDuration
+                LGNDarkInput  [i*ImageNumPixelColumns + j].duration = stepDuration
+            else:
+                bright = sim.DCSource(amplitude = numpy.random.poisson(10.0*max(0.0, (input[i][j]/127.0-1.0))), start=timeStep*stepDuration, stop=(timeStep+1)*stepDuration)
+                dark   = sim.DCSource(amplitude = numpy.random.poisson(10.0*max(0.0, 1.0-(input[i][j]/127.0))), start=timeStep*stepDuration, stop=(timeStep+1)*stepDuration)
+                LGNBright[i*ImageNumPixelColumns + j].inject(bright)
+                LGNDark  [i*ImageNumPixelColumns + j].inject(dark)
 
     # Segmentation signals deal here
     if numSegmentationLayers > 1 and timeStep == 0:
-        surfaceOnTarget = []
+        surfaceOnTarget  = []
         surfaceOffTarget = []
         boundaryOnTarget = []
         for h in range(numSegmentationLayers-1):
 
             # Pick a segmentation signal location (may be separate surface and boundary, if it is possible to use both at the same time?)
-            segmentationTargetLocationX, segmentationTargetLocationY = [int(numpy.sign(h-0.5))*27,0] # here works only for nSegLayers = 3 (to change in the NRP)
+            segmentationTargetLocationX, segmentationTargetLocationY = [int(numpy.sign(h-0.5))*segLocX,segLocY] # only works for nSegL<3 (to change in the NRP)
             if useSDPropToDist:
                 segmentationTargetLocationSD = minSD + rateSD*numpy.sqrt((segmentationTargetLocationX)**2 + segmentationTargetLocationY**2)
             segmentLocationX = int(round(random.gauss(ImageNumPixelColumns/2 - segmentationTargetLocationX, segmentationTargetLocationSD)))
@@ -235,24 +240,25 @@ for timeStep in range(nTimeSteps):
                             inputToPlot[i][j] += 20           # Track segmentation signal locations
 
         # Set a firing positive firing rate for concerned units of the segmentation top-down signal
-        if useSurfaceSegmentation:
-            if len(SurfaceSegmentationOffSignal) > 0:
-                SurfaceSegmentationOffSignal[surfaceOffTarget].set(rate=1000.0, start=timeStep*stepDuration, duration=stepDuration)
-            if len(SurfaceSegmentationOnSignal) > 0:
-                SurfaceSegmentationOnSignal [surfaceOnTarget] .set(rate=1000.0, start=timeStep*stepDuration, duration=stepDuration)
-        if useBoundarySegmentation and len(BoundarySegmentationOnSignal) > 0:
-            BoundarySegmentationOnSignal    [boundaryOnTarget].set(rate=1000.0, start=timeStep*stepDuration, duration=stepDuration)
+        if len(surfaceOffTarget) > 0:
+            SurfaceSegmentationOff[surfaceOffTarget].inject(sim.DCSource(amplitude=1.0, start=segmentationSignalStart, stop=simTime))
+        if len(surfaceOnTarget)  > 0:
+            SurfaceSegmentationOn [surfaceOnTarget] .inject(sim.DCSource(amplitude=1.0, start=segmentationSignalStart, stop=simTime))
+        if len(boundaryOnTarget) > 0:
+            BoundarySegmentationOn[boundaryOnTarget].inject(sim.DCSource(amplitude=1.0, start=segmentationSignalStart, stop=simTime))
 
     # Actual run of the network, using the input and the segmentation signals
     sim.run(stepDuration)
 
-    # Store results for later plotting
+    # To store results for later plotting
     plotDensityLGNBright       =   [[0 for j in range(ImageNumPixelColumns)] for i in range(ImageNumPixelRows)]
     plotDensityLGNDark         =   [[0 for j in range(ImageNumPixelColumns)] for i in range(ImageNumPixelRows)]
     plotDensityOrientationV1   =  [[[0 for j in range(numPixelColumns)] for i in range(numPixelRows)] for k in range(numOrientations)]
     plotDensityOrientationV2   = [[[[0 for j in range(numPixelColumns)] for i in range(numPixelRows)] for h in range(numSegmentationLayers)] for k in range(numOrientations)]
     plotDensityBrightnessV4    =  [[[0 for j in range(ImageNumPixelColumns)] for i in range(ImageNumPixelRows)] for h in range(numSegmentationLayers)]
     plotDensityDarknessV4      =  [[[0 for j in range(ImageNumPixelColumns)] for i in range(ImageNumPixelRows)] for h in range(numSegmentationLayers)]
+
+    # Record spike counts up to now from the actual neuron populations
     LGNBrightSpikeCountUpToNow = [value for (key, value) in sorted(LGNBright.get_spike_counts().items())]
     LGNDarkSpikeCountUpToNow   = [value for (key, value) in sorted(LGNDark  .get_spike_counts().items())]
     V1SpikeCountUpToNow        = [value for (key, value) in sorted(V1       .get_spike_counts().items())]
@@ -356,22 +362,10 @@ sim.end()
 
 # Create animated gifs for the recorded neuron layers ; rescale firing rates to max value
 duration = sloMoRate*stepDuration/1000.0
-if newMaxInput == 0:
-    newMaxInput = 1
-writeGif("InputAndSegSignals.GIF", [255/newMaxInput*data for data in outImagesInput], duration=duration)
-if newMaxV1 == 0:
-    newMaxV1 = 1
-writeGif("V1Orientations.GIF", [255/newMaxV1*data for data in outImagesV1], duration=duration)
+writeGif("InputAndSegSignals.GIF", [255/(1*(newMaxInput==0)     + newMaxInput)    *data for data in outImagesInput],     duration=duration)
+writeGif("V1Orientations.GIF",     [255/(1*(newMaxV1==0)        + newMaxV1)       *data for data in outImagesV1],        duration=duration)
+writeGif("LGNBright.GIF",          [255/(1*(newMaxLGNBright==0) + newMaxLGNBright)*data for data in outImagesLGNBright], duration=duration)
+writeGif("LGNDark.GIF",            [255/(1*(newMaxLGNDark==0)   + newMaxLGNDark)  *data for data in outImagesLGNDark],   duration=duration)
 for h in range(0,numSegmentationLayers):
-    if newMaxV2==0:
-        newMaxV2 = 1
-    writeGif("V2OrientationsSeg"+str(h)+".GIF", [255/newMaxV2*data for data in outImagesV2[h]], duration=duration)
-    if newMaxBrightness==0:
-        newMaxBrightness = 1
-    writeGif("V4BrightnessSeg"+str(h)+".GIF", [255/newMaxBrightness*data for data in outImagesV4[h]], duration=duration)
-if newMaxLGNBright == 0:
-    newMaxLGNBright = 1
-writeGif("LGNBright.GIF", [255/newMaxLGNBright*data for data in outImagesLGNBright], duration=duration)
-if newMaxLGNDark == 0:
-    newMaxLGNDark = 1
-writeGif("LGNDark.GIF", [255/newMaxLGNDark*data for data in outImagesLGNDark], duration=duration)
+    writeGif("V2OrientationsSeg"+str(h)+".GIF", [255/(1*(newMaxV2==0)         + newMaxV2)        *data for data in outImagesV2[h]], duration=duration)
+    writeGif("V4BrightnessSeg"+str(h)  +".GIF", [255/(1*(newMaxBrightness==0) + newMaxBrightness)*data for data in outImagesV4[h]], duration=duration)

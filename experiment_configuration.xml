@@ -1,0 +1,16 @@
+<?xml version="1.0" ?>
+<ns1:ExD xmlns:ns1="http://schemas.humanbrainproject.eu/SP10/2014/ExDConfig">
+	<ns1:name>iCub Visual Tracking experiment</ns1:name>
+	<ns1:description>In this experiment the iCub robot performs a Visual Tracking task in the virtual room environment.</ns1:description>
+	<ns1:timeout>840.0</ns1:timeout>
+	<ns1:configuration src="ExDConf/ExDVisualTrackingICub.json" type="3d-settings"/>
+	<ns1:maturity>production</ns1:maturity>
+	<ns1:environmentModel src="virtual_room_tracking_icub.sdf">
+		<ns1:robotPose theta="0.707106896726" ux="0.0" uy="0.0" uz="-0.707106665647" x="0.0" y="0.0" z="0.607"/>
+	</ns1:environmentModel>
+	<ns1:bibiConf src="bibi_configuration.xml"/>
+	<ns1:cameraPose>
+		<ns1:cameraPosition x="1.0" y="1.95" z="1.0"/>
+		<ns1:cameraLookAt x="0.0" y="0.0" z="1.0"/>
+	</ns1:cameraPose>
+</ns1:ExD>
