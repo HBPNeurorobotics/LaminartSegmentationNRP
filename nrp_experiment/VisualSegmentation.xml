@@ -1,0 +1,24 @@
+<?xml version="1.0" encoding="UTF-8"?>
+<bibi xmlns:xsi="http://www.w3.org/2001/XMLSchema-instance" xmlns="http://schemas.humanbrainproject.eu/SP10/2014/BIBI" xsi:schemaLocation="http://schemas.humanbrainproject.eu/SP10/2014/BIBI bibi_configuration.xsd">
+  <brainModel>
+    <file>brain_model/visual_segmentation.py</file>
+  </brainModel>
+  <bodyModel>icub_model/model.sdf</bodyModel>
+  <transferFunction xsi:type="PythonTransferFunction" src="BIBI/grab_image.py"/>
+  <transferFunction xsi:type="PythonTransferFunction" src="BIBI/plot_V1_activity.py"/>
+  <!-- <transferFunction xsi:type="PythonTransferFunction" src="BIBI/eye_control.py"/> -->
+  <!-- <transferFunction xsi:type="PythonTransferFunction" src="BIBI/send_segmentation_signals.py"/> -->
+  <transferFunction xsi:type="PythonTransferFunction">
+    #<![CDATA[
+    import hbp_nrp_cle.tf_framework as nrp
+
+    # This specifies that the neurons of the motor population
+    # should be monitored. You can see them in the spike train widget
+    @nrp.NeuronMonitor(nrp.brain.V2Layer23, nrp.spike_recorder)
+    def all_neurons_spike_monitor(t):
+        # Uncomment to log into the 'log-console' visible in the simulation
+        # clientLogger.info("Time: "+str(t))
+        return True
+    #]]>
+  </transferFunction>
+</bibi>
