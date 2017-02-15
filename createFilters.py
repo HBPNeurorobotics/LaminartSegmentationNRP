@@ -3,7 +3,7 @@ import numpy
 
 # Function 1: Take filter parameters and build 2 oriented filters with different polarities for connection pattern from the LGN to V1
 # Usage : filters1, filters2 = createFilters(numOrientations=8, size=4, sigma2=0.75, Olambda=4)
-def createFilters(numOrientations, size, sigma2, Olambda):
+def createFilters(numOrientations, size, sigma2, Olambda, phi):
 
     # Initialize the filters
     filters1 = numpy.zeros((numOrientations, size, size))
@@ -13,7 +13,7 @@ def createFilters(numOrientations, size, sigma2, Olambda):
     midSize = (size-1.)/2.
     maxValue = -1
     for k in range(0, numOrientations):
-        theta = numpy.pi * (k + 1) / numOrientations
+        theta = numpy.pi * (k + 1) / numOrientations + phi
         for i in range(0, size):
             for j in range(0, size):
                 x = (i - midSize) * numpy.cos(theta) + (j-midSize)*numpy.sin(theta)
@@ -35,14 +35,14 @@ def createFilters(numOrientations, size, sigma2, Olambda):
 # Function 2: Take filter parameters and build connection pooling and connection filters arrays
 # Usage (for V1 e.g.) : V1poolingfilters, V1poolingconnections1, V1poolingconnections2 = createPoolConnAndFilters(numOrientations=8, VPoolSize=3, sigma2=4.0, Olambda=5)
 # Usage (for V2 e.g.) : V2poolingfilters, V2poolingconnections1, V2poolingconnections2 = createPoolConnAndFilters(numOrientations=8, VPoolSize=7, sigma2=26.0, Olambda=9)
-def createPoolingConnectionsAndFilters(numOrientations, VPoolSize, sigma2, Olambda):
+def createPoolingConnectionsAndFilters(numOrientations, VPoolSize, sigma2, Olambda, phi):
 
     # Set up layer23 pooling filters
     # Set up orientation kernels
     midSize = (VPoolSize - 1.) / 2.
     Vpoolingfilters = numpy.zeros((numOrientations, VPoolSize, VPoolSize))
     for k in range(0, numOrientations):
-        theta = numpy.pi*(k+1)/numOrientations
+        theta = numpy.pi*(k+1)/numOrientations + phi
         # Make filter
         for i in range(0, VPoolSize):
             for j in range(0, VPoolSize):
@@ -58,7 +58,7 @@ def createPoolingConnectionsAndFilters(numOrientations, VPoolSize, sigma2, Olamb
 
     # Correct certain filters (so that every filter has the same number of active pixels) ; this applies to orientation like 22.5 deg
     for k in range(0, numOrientations):
-        theta = 180*(k+1)/numOrientations
+        theta = 180*(k+1)/numOrientations + phi*180/numpy.pi
         if min(abs(theta-0),abs(theta-180)) < min(abs(theta-90),abs(theta-270)): # more horizontally oriented filter
             for i in range(0, VPoolSize):
                 check = Vpoolingfilters[k,i:min(i+2,VPoolSize),:]

@@ -1,7 +1,7 @@
 <?xml version="1.0" ?>
 <ns1:ExD xmlns:ns1="http://schemas.humanbrainproject.eu/SP10/2014/ExDConfig">
 	<ns1:name>iCub Visual Tracking experiment</ns1:name>
-	<ns1:description>In this experiment the iCub robot performs a Visual Tracking task in the virtual room environment.</ns1:description>
+	<ns1:description>In this experiment the iCub robot performs a Visual Tracking task in the virtual room environment. Enhanced with a cortical model for grouping and segmentation.</ns1:description>
 	<ns1:timeout>840.0</ns1:timeout>
 	<ns1:configuration src="ExDConf/ExDVisualTrackingICub.json" type="3d-settings"/>
 	<ns1:maturity>production</ns1:maturity>

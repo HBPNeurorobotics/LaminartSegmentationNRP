@@ -20,7 +20,7 @@ sloMoRate    = 4.0     # how much the GIFs are slowed vs real time, default is 4
 sim.setup(timestep=dt, min_delay=1.0, max_delay=10.0)  # delays in ms
 
 # General parameters
-fileName = "squares 2"     # this would be removed if it is in the NRP
+fileName = "squares 1"     # this would be removed if it is in the NRP
 input, ImageNumPixelRows, ImageNumPixelColumns = setInput.readAndCropBMP(fileName, onlyZerosAndOnes=0)
 print "Input image dimensions of " + fileName + ": [Rows, Columns] = " + str([ImageNumPixelRows,ImageNumPixelColumns])
 weightScale   = 1.0        # general weight for all connections between neurons
@@ -81,12 +81,10 @@ connections = {
 
     # Surface segmentation layers
     'S_SegmentSpreadExcite'   :  1.0,   #  1000.0,
-    'S_SegmentInterInhib'     : -0.2,   #  -200.0,
     'S_SegmentOnOffInhib'     : -5.0,   # -5000.0,
     'S_SegmentGatingInhib'    : -5.0,   # -5000.0,
 
     # Boundary segmentation layers
-    'B_SegmentInterInhib'     : -0.2,   #  -200.0,
     'B_SegmentOnOffInhib'     : -5.0,   # -5000.0,
     'B_SegmentGatingInhib'    : -5.0,   # -5000.0,
     'B_SegmentSpreadExcite'   :  2.0,   #  2000.0,
@@ -96,10 +94,11 @@ for key, value in connections.items():
     connections[key] = value*weightScale
 
 # Orientation filters parameters
-numOrientations = 2                       # number of orientations   (2, 4 or 8 ; 8 is experimental)
+numOrientations = 4                       # number of orientations   (2, 4 or 8 ; 8 is experimental)
 oriFilterSize   = 4                       # better as an even number (how V1 pools from LGN) ; 4 is original
 V1PoolSize      = 3                       # better as an odd  number (pooling in V1)         ; 3 is original
 V2PoolSize      = 7                       # better as an odd  number (pooling in V2)         ; 7 is original
+phi             = 0*numpy.pi/2            # filter phase (sometimes convenient to shift all filters)
 numPixelRows    = ImageNumPixelRows+1     # number of rows for the oriented grid (in between un-oriented pixels)
 numPixelColumns = ImageNumPixelColumns+1  # same for columns
 
@@ -120,7 +119,7 @@ if numSegmentationLayers == 1 or fileName in ["Test", "Test2", "Test3"]:
     useBoundarySegmentation  = 0
 
 # Build the whole network and take the layers that have to be updated during the simulation (will modify sim)
-network = buildNetworkAndConnections(sim, ImageNumPixelRows, ImageNumPixelColumns, numOrientations, oriFilterSize, V1PoolSize, V2PoolSize,
+network = buildNetworkAndConnections(sim, ImageNumPixelRows, ImageNumPixelColumns, numOrientations, oriFilterSize, V1PoolSize, V2PoolSize, phi,
                                      connections, cellType, numSegmentationLayers, useBoundarySegmentation, useSurfaceSegmentation)
 
 # Take the neuron layers that need to be updated online or that we want to take records of

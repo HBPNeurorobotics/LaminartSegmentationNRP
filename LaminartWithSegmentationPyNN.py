@@ -1,11 +1,19 @@
 # This file contains the setup of the neuronal network running the Husky experiment with neuronal image recognition
-import os, sys
-import matplotlib.pyplot as plt
-import numpy
+import os, sys, numpy, matplotlib.pyplot as plt, nest
 from createFilters import createFilters, createPoolingConnectionsAndFilters
+from pyNN.connectors import Connector
+
+# Create a custom connector (use nest.Connect explicitly to go faster)
+class MyConnector(Connector):
+    def __init__(self, ST=None):
+        self.source = [x[0] for x in ST]
+        self.target = [x[1] for x in ST]
+    def connect(self, projection):
+        if len(self.source) > 0 and len(self.target) > 0:
+            nest.Connect([projection.pre.all_cells[s] for s in self.source], [projection.post.all_cells[t] for t in self.target], 'one_to_one', syn_spec=projection.nest_synapse_model)
 
 # Function that builds all the layers of the network and connect them according to the Laminart model, enhanced with segmentation ; returns the full network and all the connections
-def buildNetworkAndConnections(sim, ImageNumPixelRows, ImageNumPixelColumns, numOrientations, oriFilterSize, V1PoolSize, V2PoolSize,
+def buildNetworkAndConnections(sim, ImageNumPixelRows, ImageNumPixelColumns, numOrientations, oriFilterSize, V1PoolSize, V2PoolSize, phi,
                                connections, normalCellType, numSegmentationLayers, useBoundarySegmentation, useSurfaceSegmentation):
 
     #########################################################
@@ -19,9 +27,9 @@ def buildNetworkAndConnections(sim, ImageNumPixelRows, ImageNumPixelColumns, num
     numPixelColumns = ImageNumPixelColumns + 1  # width for oriented neurons (placed between un-oriented pixels)
 
     # Set the orientation filters (orientation kernels, V1 and V2 layer23 pooling filters)
-    filters1, filters2 = createFilters(numOrientations, oriFilterSize, sigma2=0.75, Olambda=4)
-    V1PoolingFilters, V1PoolingConnections1, V1PoolingConnections2 = createPoolingConnectionsAndFilters(numOrientations, VPoolSize=V1PoolSize, sigma2=4.0, Olambda=5)
-    V2PoolingFilters, V2PoolingConnections1, V2PoolingConnections2 = createPoolingConnectionsAndFilters(numOrientations, VPoolSize=V2PoolSize, sigma2=26.0, Olambda=9)
+    filters1, filters2 = createFilters(numOrientations, oriFilterSize, sigma2=0.75, Olambda=4, phi=phi)
+    V1PoolingFilters, V1PoolingConnections1, V1PoolingConnections2 = createPoolingConnectionsAndFilters(numOrientations, VPoolSize=V1PoolSize, sigma2=4.0, Olambda=5, phi=phi)
+    V2PoolingFilters, V2PoolingConnections1, V2PoolingConnections2 = createPoolingConnectionsAndFilters(numOrientations, VPoolSize=V2PoolSize, sigma2=26.0, Olambda=9, phi=phi)
 
     OppositeOrientationIndex = list(numpy.roll(range(numOrientations), numOrientations/2))
     # For numOrientations = 2, orientation indexes = [vertical, horizontal] -> opposite orientation indexes = [horizontal, vertical]
@@ -149,18 +157,18 @@ def buildNetworkAndConnections(sim, ImageNumPixelRows, ImageNumPixelColumns, num
 
                 if len(ST)>0:
                     # LGN -> Layer 6 and 4 (simple cells) connections (no connections at the edges, to avoid edge-effects) first polarity filter
-                    sim.Projection(LGNBright, V1Layer6P1, sim.FromListConnector(ST), sim.StaticSynapse(weight=oriFilterWeight*filters1[k][i2+oriFilterSize/2][j2+oriFilterSize/2]))
-                    sim.Projection(LGNDark,   V1Layer6P2, sim.FromListConnector(ST), sim.StaticSynapse(weight=oriFilterWeight*filters1[k][i2+oriFilterSize/2][j2+oriFilterSize/2]))
-                    sim.Projection(LGNBright, V1Layer4P1, sim.FromListConnector(ST), sim.StaticSynapse(weight=oriFilterWeight*filters1[k][i2+oriFilterSize/2][j2+oriFilterSize/2]))
-                    sim.Projection(LGNDark,   V1Layer4P2, sim.FromListConnector(ST), sim.StaticSynapse(weight=oriFilterWeight*filters1[k][i2+oriFilterSize/2][j2+oriFilterSize/2]))
+                    sim.Projection(LGNBright, V1Layer6P1, MyConnector(ST), sim.StaticSynapse(weight=oriFilterWeight*filters1[k][i2+oriFilterSize/2][j2+oriFilterSize/2]))
+                    sim.Projection(LGNDark,   V1Layer6P2, MyConnector(ST), sim.StaticSynapse(weight=oriFilterWeight*filters1[k][i2+oriFilterSize/2][j2+oriFilterSize/2]))
+                    sim.Projection(LGNBright, V1Layer4P1, MyConnector(ST), sim.StaticSynapse(weight=oriFilterWeight*filters1[k][i2+oriFilterSize/2][j2+oriFilterSize/2]))
+                    sim.Projection(LGNDark,   V1Layer4P2, MyConnector(ST), sim.StaticSynapse(weight=oriFilterWeight*filters1[k][i2+oriFilterSize/2][j2+oriFilterSize/2]))
                     synapseCount += 4*len(ST)
 
                 if len(ST2)>0:
                     # LGN -> Layer 6 and 4 (simple cells) connections (no connections at the edges, to avoid edge-effects) second polarity filter
-                    sim.Projection(LGNBright, V1Layer6P2, sim.FromListConnector(ST2), sim.StaticSynapse(weight=oriFilterWeight*filters2[k][i2+oriFilterSize/2][j2+oriFilterSize/2]))
-                    sim.Projection(LGNDark,   V1Layer6P1, sim.FromListConnector(ST2), sim.StaticSynapse(weight=oriFilterWeight*filters2[k][i2+oriFilterSize/2][j2+oriFilterSize/2]))
-                    sim.Projection(LGNBright, V1Layer4P2, sim.FromListConnector(ST2), sim.StaticSynapse(weight=oriFilterWeight*filters2[k][i2+oriFilterSize/2][j2+oriFilterSize/2]))
-                    sim.Projection(LGNDark,   V1Layer4P1, sim.FromListConnector(ST2), sim.StaticSynapse(weight=oriFilterWeight*filters2[k][i2+oriFilterSize/2][j2+oriFilterSize/2]))
+                    sim.Projection(LGNBright, V1Layer6P2, MyConnector(ST2), sim.StaticSynapse(weight=oriFilterWeight*filters2[k][i2+oriFilterSize/2][j2+oriFilterSize/2]))
+                    sim.Projection(LGNDark,   V1Layer6P1, MyConnector(ST2), sim.StaticSynapse(weight=oriFilterWeight*filters2[k][i2+oriFilterSize/2][j2+oriFilterSize/2]))
+                    sim.Projection(LGNBright, V1Layer4P2, MyConnector(ST2), sim.StaticSynapse(weight=oriFilterWeight*filters2[k][i2+oriFilterSize/2][j2+oriFilterSize/2]))
+                    sim.Projection(LGNDark,   V1Layer4P1, MyConnector(ST2), sim.StaticSynapse(weight=oriFilterWeight*filters2[k][i2+oriFilterSize/2][j2+oriFilterSize/2]))
                     synapseCount += 4*len(ST2)
 
     # Excitatory connection from same orientation and polarity 1, input from layer 6
@@ -180,8 +188,8 @@ def buildNetworkAndConnections(sim, ImageNumPixelRows, ImageNumPixelColumns, num
                                            k*numPixelRows*numPixelColumns + i*numPixelColumns + j))
 
     # Surround inhibition from layer 6 of same orientation and polarity
-    sim.Projection(V1Layer6P1, V1Layer4P1, sim.FromListConnector(ST), sim.StaticSynapse(weight=connections['V1_6To4Inhib']))
-    sim.Projection(V1Layer6P2, V1Layer4P2, sim.FromListConnector(ST), sim.StaticSynapse(weight=connections['V1_6To4Inhib']))
+    sim.Projection(V1Layer6P1, V1Layer4P1, MyConnector(ST), sim.StaticSynapse(weight=connections['V1_6To4Inhib']))
+    sim.Projection(V1Layer6P2, V1Layer4P2, MyConnector(ST), sim.StaticSynapse(weight=connections['V1_6To4Inhib']))
     synapseCount += 2*len(ST)
 
     sys.stdout.write('done. \nSetting up V1, Layers 23 and 6 (feedback)...')
@@ -230,21 +238,21 @@ def buildNetworkAndConnections(sim, ImageNumPixelRows, ImageNumPixelColumns, num
     synapseCount += (len(V1Layer4P1)+len(V1Layer4P2))
 
     # Cross-orientation inhibition
-    sim.Projection(V1Layer23, V1Layer23, sim.FromListConnector(ST), sim.StaticSynapse(weight=connections['V1_CrossOriInhib']))
+    sim.Projection(V1Layer23, V1Layer23, MyConnector(ST), sim.StaticSynapse(weight=connections['V1_CrossOriInhib']))
     synapseCount += len(ST)
 
     # Pooling neurons in Layer 23 (excitation from same orientation, inhibition from orthogonal), V1PoolingFilters pools from both sides
-    sim.Projection(V1Layer23, V1Layer23Pool, sim.FromListConnector(ST2), sim.StaticSynapse(weight=connections['V1_ComplexExcite']))
-    sim.Projection(V1Layer23, V1Layer23Pool, sim.FromListConnector(ST3), sim.StaticSynapse(weight=connections['V1_ComplexInhib']))
+    sim.Projection(V1Layer23, V1Layer23Pool, MyConnector(ST2), sim.StaticSynapse(weight=connections['V1_ComplexExcite']))
+    sim.Projection(V1Layer23, V1Layer23Pool, MyConnector(ST3), sim.StaticSynapse(weight=connections['V1_ComplexInhib']))
     synapseCount += (len(ST2) + len(ST3))
 
     # Pooling neurons back to Layer 23 and to interneurons (ST4 for one side and ST5 for the other), V1poolingconnections pools from only one side
-    sim.Projection(V1Layer23Pool, V1Layer23,       sim.FromListConnector(ST4), sim.StaticSynapse(weight=connections['V1_FeedbackExcite']))
-    sim.Projection(V1Layer23Pool, V1Layer23Inter1, sim.FromListConnector(ST4), sim.StaticSynapse(weight=connections['V1_FeedbackExcite']))
-    sim.Projection(V1Layer23Pool, V1Layer23Inter2, sim.FromListConnector(ST4), sim.StaticSynapse(weight=connections['V1_NegFeedbackInhib']))
-    sim.Projection(V1Layer23Pool, V1Layer23,       sim.FromListConnector(ST5), sim.StaticSynapse(weight=connections['V1_FeedbackExcite']))
-    sim.Projection(V1Layer23Pool, V1Layer23Inter2, sim.FromListConnector(ST5), sim.StaticSynapse(weight=connections['V1_FeedbackExcite']))
-    sim.Projection(V1Layer23Pool, V1Layer23Inter1, sim.FromListConnector(ST5), sim.StaticSynapse(weight=connections['V1_NegFeedbackInhib']))
+    sim.Projection(V1Layer23Pool, V1Layer23,       MyConnector(ST4), sim.StaticSynapse(weight=connections['V1_FeedbackExcite']))
+    sim.Projection(V1Layer23Pool, V1Layer23Inter1, MyConnector(ST4), sim.StaticSynapse(weight=connections['V1_FeedbackExcite']))
+    sim.Projection(V1Layer23Pool, V1Layer23Inter2, MyConnector(ST4), sim.StaticSynapse(weight=connections['V1_NegFeedbackInhib']))
+    sim.Projection(V1Layer23Pool, V1Layer23,       MyConnector(ST5), sim.StaticSynapse(weight=connections['V1_FeedbackExcite']))
+    sim.Projection(V1Layer23Pool, V1Layer23Inter2, MyConnector(ST5), sim.StaticSynapse(weight=connections['V1_FeedbackExcite']))
+    sim.Projection(V1Layer23Pool, V1Layer23Inter1, MyConnector(ST5), sim.StaticSynapse(weight=connections['V1_NegFeedbackInhib']))
     synapseCount += 3*(len(ST4) + len(ST5))
 
     # Connect interneurons to complex cell and each other
@@ -253,8 +261,8 @@ def buildNetworkAndConnections(sim, ImageNumPixelRows, ImageNumPixelColumns, num
     synapseCount += (len(V1Layer23Inter1) + len(V1Layer23Inter2))
 
     # End-cutting (excitation from orthogonal interneuron)
-    sim.Projection(V1Layer23Inter1, V1Layer23, sim.FromListConnector(ST6), sim.StaticSynapse(weight=connections['V1_EndCutExcite']))
-    sim.Projection(V1Layer23Inter2, V1Layer23, sim.FromListConnector(ST6), sim.StaticSynapse(weight=connections['V1_EndCutExcite']))
+    sim.Projection(V1Layer23Inter1, V1Layer23, MyConnector(ST6), sim.StaticSynapse(weight=connections['V1_EndCutExcite']))
+    sim.Projection(V1Layer23Inter2, V1Layer23, MyConnector(ST6), sim.StaticSynapse(weight=connections['V1_EndCutExcite']))
     synapseCount += 2*len(ST6)
 
     # Connect Layer 23 cells to Layer 6 cells (folded feedback)
@@ -285,13 +293,13 @@ def buildNetworkAndConnections(sim, ImageNumPixelRows, ImageNumPixelColumns, num
                                             h*numOrientations*numPixelRows*numPixelColumns + k*numPixelRows*numPixelColumns + i*numPixelColumns + j))
 
     # V2 Layers 4 and 6 connections
-    sim.Projection(V1Layer23,  V2Layer6, sim.FromListConnector(ST), sim.StaticSynapse(weight=connections['V1_ToV2Excite']))
-    sim.Projection(V1Layer23,  V2Layer4, sim.FromListConnector(ST), sim.StaticSynapse(weight=connections['V1_ToV2Excite']))
+    sim.Projection(V1Layer23,  V2Layer6, MyConnector(ST), sim.StaticSynapse(weight=connections['V1_ToV2Excite']))
+    sim.Projection(V1Layer23,  V2Layer4, MyConnector(ST), sim.StaticSynapse(weight=connections['V1_ToV2Excite']))
     sim.Projection(V2Layer6, V2Layer4, sim.OneToOneConnector(),   sim.StaticSynapse(weight=connections['V2_6To4Excite']))
     synapseCount += (2*len(ST) + len(V2Layer6))
 
     # Surround inhibition V2 Layer 6 -> 4
-    sim.Projection(V2Layer6,  V2Layer4, sim.FromListConnector(ST2), sim.StaticSynapse(weight=connections['V2_6To4Inhib']))
+    sim.Projection(V2Layer6,  V2Layer4, MyConnector(ST2), sim.StaticSynapse(weight=connections['V2_6To4Inhib']))
     synapseCount += len(ST2)
 
     sys.stdout.write('done. \nSetting up V2, Layers 23 and 6 (feedback)...')
@@ -321,8 +329,9 @@ def buildNetworkAndConnections(sim, ImageNumPixelRows, ImageNumPixelColumns, num
                                     for k2 in range(0, numOrientations):
                                         if k2 != k:
                                             if k2 == OppositeOrientationIndex[k]:
-                                                ST3.append((h*numOrientations*numPixelRows*numPixelColumns + k2*numPixelRows*numPixelColumns + (i+i2)*numPixelColumns + (j+j2),
-                                                            h*numOrientations*numPixelRows*numPixelColumns + k*numPixelRows*numPixelColumns + i*numPixelColumns + j))
+                                                for h2 in range(numSegmentationLayers):  # for all segmentation layers
+                                                    ST3.append((h2*numOrientations*numPixelRows*numPixelColumns + k2*numPixelRows*numPixelColumns + (i+i2)*numPixelColumns + (j+j2),
+                                                                h*numOrientations*numPixelRows*numPixelColumns + k*numPixelRows*numPixelColumns + i*numPixelColumns + j))
                                             else:
                                                 ST4.append((h*numOrientations*numPixelRows*numPixelColumns + k2*numPixelRows*numPixelColumns + (i+i2)*numPixelColumns + (j+j2),
                                                             h*numOrientations*numPixelRows*numPixelColumns + k*numPixelRows*numPixelColumns + i*numPixelColumns + j))
@@ -342,24 +351,24 @@ def buildNetworkAndConnections(sim, ImageNumPixelRows, ImageNumPixelColumns, num
     synapseCount += len(V2Layer4)
 
     # Cross-orientation inhibition
-    sim.Projection(V2Layer23, V2Layer23, sim.FromListConnector(ST), sim.StaticSynapse(weight=connections['V2_CrossOriInhib']))
+    sim.Projection(V2Layer23, V2Layer23, MyConnector(ST), sim.StaticSynapse(weight=connections['V2_CrossOriInhib']))
     synapseCount += len(ST)
 
     # Pooling neurons in V2Layer 23 (excitation from same orientation, inhibition from different + stronger for orthogonal orientation)
-    sim.Projection(V2Layer23, V2Layer23Pool, sim.FromListConnector(ST2), sim.StaticSynapse(weight=connections['V2_ComplexExcite']))
-    sim.Projection(V2Layer23, V2Layer23Pool, sim.FromListConnector(ST3), sim.StaticSynapse(weight=connections['V2_ComplexInhib']))
+    sim.Projection(V2Layer23, V2Layer23Pool, MyConnector(ST2), sim.StaticSynapse(weight=connections['V2_ComplexExcite']))
+    sim.Projection(V2Layer23, V2Layer23Pool, MyConnector(ST3), sim.StaticSynapse(weight=connections['V2_ComplexInhib']))
     synapseCount += (len(ST2) + len(ST3))
     if len(ST4)>0:  # non-orthogonal inhibition
-        sim.Projection(V2Layer23, V2Layer23Pool, sim.FromListConnector(ST4), sim.StaticSynapse(weight=connections['V2_ComplexInhib2']))
+        sim.Projection(V2Layer23, V2Layer23Pool, MyConnector(ST4), sim.StaticSynapse(weight=connections['V2_ComplexInhib2']))
         synapseCount += len(ST4)
 
     # Pooling neurons back to Layer 23 and to interneurons (ST5 for one side and ST6 for the other), V1poolingconnections pools from only one side
-    sim.Projection(V2Layer23Pool, V2Layer23,       sim.FromListConnector(ST5), sim.StaticSynapse(weight=connections['V2_FeedbackExcite']))
-    sim.Projection(V2Layer23Pool, V2Layer23Inter1, sim.FromListConnector(ST5), sim.StaticSynapse(weight=connections['V2_FeedbackExcite']))
-    sim.Projection(V2Layer23Pool, V2Layer23Inter2, sim.FromListConnector(ST5), sim.StaticSynapse(weight=connections['V2_NegFeedbackInhib']))
-    sim.Projection(V2Layer23Pool, V2Layer23,       sim.FromListConnector(ST6), sim.StaticSynapse(weight=connections['V2_FeedbackExcite']))
-    sim.Projection(V2Layer23Pool, V2Layer23Inter2, sim.FromListConnector(ST6), sim.StaticSynapse(weight=connections['V2_FeedbackExcite']))
-    sim.Projection(V2Layer23Pool, V2Layer23Inter1, sim.FromListConnector(ST6), sim.StaticSynapse(weight=connections['V2_NegFeedbackInhib']))
+    sim.Projection(V2Layer23Pool, V2Layer23,       MyConnector(ST5), sim.StaticSynapse(weight=connections['V2_FeedbackExcite']))
+    sim.Projection(V2Layer23Pool, V2Layer23Inter1, MyConnector(ST5), sim.StaticSynapse(weight=connections['V2_FeedbackExcite']))
+    sim.Projection(V2Layer23Pool, V2Layer23Inter2, MyConnector(ST5), sim.StaticSynapse(weight=connections['V2_NegFeedbackInhib']))
+    sim.Projection(V2Layer23Pool, V2Layer23,       MyConnector(ST6), sim.StaticSynapse(weight=connections['V2_FeedbackExcite']))
+    sim.Projection(V2Layer23Pool, V2Layer23Inter2, MyConnector(ST6), sim.StaticSynapse(weight=connections['V2_FeedbackExcite']))
+    sim.Projection(V2Layer23Pool, V2Layer23Inter1, MyConnector(ST6), sim.StaticSynapse(weight=connections['V2_NegFeedbackInhib']))
     synapseCount += (3*len(ST5) + 3*len(ST6))
 
     # Connect interneurons to complex cell
@@ -416,43 +425,43 @@ def buildNetworkAndConnections(sim, ImageNumPixelRows, ImageNumPixelColumns, num
     synapseCount += (len(V4Darkness) + len(V4Brightness))
 
     # LGNBright->V4brightness and LGNDark->V4darkness
-    sim.Projection(LGNBright, V4Brightness, sim.FromListConnector(ST), sim.StaticSynapse(weight=connections['LGN_ToV4Excite']))
-    sim.Projection(LGNDark,   V4Darkness,   sim.FromListConnector(ST), sim.StaticSynapse(weight=connections['LGN_ToV4Excite']))
+    sim.Projection(LGNBright, V4Brightness, MyConnector(ST), sim.StaticSynapse(weight=connections['LGN_ToV4Excite']))
+    sim.Projection(LGNDark,   V4Darkness,   MyConnector(ST), sim.StaticSynapse(weight=connections['LGN_ToV4Excite']))
     synapseCount += 2*len(ST)
 
     # V4brightness<->Interneurons (flow out on interneuron 1 flow in on interneuron 2) ; fliplr to use the connections in the way "target indexes --> source indexes"
-    sim.Projection(V4Brightness,       V4InterBrightness1, sim.FromListConnector(ST2),               sim.StaticSynapse(weight=connections['V4_BrightnessExcite']))
-    sim.Projection(V4Brightness,       V4InterBrightness2, sim.FromListConnector(ST2),               sim.StaticSynapse(weight=connections['V4_BrightnessInhib']))
-    sim.Projection(V4InterBrightness1, V4Brightness,       sim.FromListConnector(numpy.fliplr(ST2)), sim.StaticSynapse(weight=connections['V4_BrightnessInhib']))
-    sim.Projection(V4InterBrightness2, V4Brightness,       sim.FromListConnector(numpy.fliplr(ST2)), sim.StaticSynapse(weight=connections['V4_BrightnessExcite']))
+    sim.Projection(V4Brightness,       V4InterBrightness1, MyConnector(ST2),               sim.StaticSynapse(weight=connections['V4_BrightnessExcite']))
+    sim.Projection(V4Brightness,       V4InterBrightness2, MyConnector(ST2),               sim.StaticSynapse(weight=connections['V4_BrightnessInhib']))
+    sim.Projection(V4InterBrightness1, V4Brightness,       MyConnector(numpy.fliplr(ST2)), sim.StaticSynapse(weight=connections['V4_BrightnessInhib']))
+    sim.Projection(V4InterBrightness2, V4Brightness,       MyConnector(numpy.fliplr(ST2)), sim.StaticSynapse(weight=connections['V4_BrightnessExcite']))
     synapseCount += 4*len(ST2)
 
     # V4darkness<->Interneurons (flow out on interneuron 1 flow in on interneuron 2) ; fliplr to use the connections in the way "target indexes --> source indexes"
-    sim.Projection(V4Darkness,       V4InterDarkness1, sim.FromListConnector(ST2),               sim.StaticSynapse(weight=connections['V4_BrightnessExcite']))
-    sim.Projection(V4Darkness,       V4InterDarkness2, sim.FromListConnector(ST2),               sim.StaticSynapse(weight=connections['V4_BrightnessInhib']))
-    sim.Projection(V4InterDarkness1, V4Darkness,       sim.FromListConnector(numpy.fliplr(ST2)), sim.StaticSynapse(weight=connections['V4_BrightnessInhib']))
-    sim.Projection(V4InterDarkness2, V4Darkness,       sim.FromListConnector(numpy.fliplr(ST2)), sim.StaticSynapse(weight=connections['V4_BrightnessExcite']))
+    sim.Projection(V4Darkness,       V4InterDarkness1, MyConnector(ST2),               sim.StaticSynapse(weight=connections['V4_BrightnessExcite']))
+    sim.Projection(V4Darkness,       V4InterDarkness2, MyConnector(ST2),               sim.StaticSynapse(weight=connections['V4_BrightnessInhib']))
+    sim.Projection(V4InterDarkness1, V4Darkness,       MyConnector(numpy.fliplr(ST2)), sim.StaticSynapse(weight=connections['V4_BrightnessInhib']))
+    sim.Projection(V4InterDarkness2, V4Darkness,       MyConnector(numpy.fliplr(ST2)), sim.StaticSynapse(weight=connections['V4_BrightnessExcite']))
     synapseCount += 4*len(ST2)
 
     # V4brightness neighbors<->Interneurons (flow out on interneuron 1 flow in on interneuron 2) ; fliplr to use the connections in the way "target indexes --> source indexes"
-    sim.Projection(V4Brightness,       V4InterBrightness2, sim.FromListConnector(ST3),               sim.StaticSynapse(weight=connections['V4_BrightnessExcite']))
-    sim.Projection(V4Brightness,       V4InterBrightness1, sim.FromListConnector(ST3),               sim.StaticSynapse(weight=connections['V4_BrightnessInhib']))
-    sim.Projection(V4InterBrightness2, V4Brightness,       sim.FromListConnector(numpy.fliplr(ST3)), sim.StaticSynapse(weight=connections['V4_BrightnessInhib']))
-    sim.Projection(V4InterBrightness1, V4Brightness,       sim.FromListConnector(numpy.fliplr(ST3)), sim.StaticSynapse(weight=connections['V4_BrightnessExcite']))
+    sim.Projection(V4Brightness,       V4InterBrightness2, MyConnector(ST3),               sim.StaticSynapse(weight=connections['V4_BrightnessExcite']))
+    sim.Projection(V4Brightness,       V4InterBrightness1, MyConnector(ST3),               sim.StaticSynapse(weight=connections['V4_BrightnessInhib']))
+    sim.Projection(V4InterBrightness2, V4Brightness,       MyConnector(numpy.fliplr(ST3)), sim.StaticSynapse(weight=connections['V4_BrightnessInhib']))
+    sim.Projection(V4InterBrightness1, V4Brightness,       MyConnector(numpy.fliplr(ST3)), sim.StaticSynapse(weight=connections['V4_BrightnessExcite']))
     synapseCount += 4*len(ST3)
 
     # V4darkness neighbors<->Interneurons (flow out on interneuron 1 flow in on interneuron 2) ; fliplr to use the connections in the way "target indexes --> source indexes"
-    sim.Projection(V4Darkness,       V4InterDarkness2, sim.FromListConnector(ST3),               sim.StaticSynapse(weight=connections['V4_BrightnessExcite']))
-    sim.Projection(V4Darkness,       V4InterDarkness1, sim.FromListConnector(ST3),               sim.StaticSynapse(weight=connections['V4_BrightnessInhib']))
-    sim.Projection(V4InterDarkness2, V4Darkness,       sim.FromListConnector(numpy.fliplr(ST3)), sim.StaticSynapse(weight=connections['V4_BrightnessInhib']))
-    sim.Projection(V4InterDarkness1, V4Darkness,       sim.FromListConnector(numpy.fliplr(ST3)), sim.StaticSynapse(weight=connections['V4_BrightnessExcite']))
+    sim.Projection(V4Darkness,       V4InterDarkness2, MyConnector(ST3),               sim.StaticSynapse(weight=connections['V4_BrightnessExcite']))
+    sim.Projection(V4Darkness,       V4InterDarkness1, MyConnector(ST3),               sim.StaticSynapse(weight=connections['V4_BrightnessInhib']))
+    sim.Projection(V4InterDarkness2, V4Darkness,       MyConnector(numpy.fliplr(ST3)), sim.StaticSynapse(weight=connections['V4_BrightnessInhib']))
+    sim.Projection(V4InterDarkness1, V4Darkness,       MyConnector(numpy.fliplr(ST3)), sim.StaticSynapse(weight=connections['V4_BrightnessExcite']))
     synapseCount += 4*len(ST3)
 
     # V2Layer23 -> V4 Interneurons (all boundaries block except for orientation of flow)
-    sim.Projection(V2Layer23, V4InterBrightness1, sim.FromListConnector(ST4), sim.StaticSynapse(weight=connections['V2_BoundaryInhib']))
-    sim.Projection(V2Layer23, V4InterBrightness2, sim.FromListConnector(ST4), sim.StaticSynapse(weight=connections['V2_BoundaryInhib']))
-    sim.Projection(V2Layer23, V4InterDarkness1,   sim.FromListConnector(ST4), sim.StaticSynapse(weight=connections['V2_BoundaryInhib']))
-    sim.Projection(V2Layer23, V4InterDarkness2,   sim.FromListConnector(ST4), sim.StaticSynapse(weight=connections['V2_BoundaryInhib']))
+    sim.Projection(V2Layer23, V4InterBrightness1, MyConnector(ST4), sim.StaticSynapse(weight=connections['V2_BoundaryInhib']))
+    sim.Projection(V2Layer23, V4InterBrightness2, MyConnector(ST4), sim.StaticSynapse(weight=connections['V2_BoundaryInhib']))
+    sim.Projection(V2Layer23, V4InterDarkness1,   MyConnector(ST4), sim.StaticSynapse(weight=connections['V2_BoundaryInhib']))
+    sim.Projection(V2Layer23, V4InterDarkness2,   MyConnector(ST4), sim.StaticSynapse(weight=connections['V2_BoundaryInhib']))
     synapseCount += 4*len(ST4)
 
     # Strong inhibition between segmentation layers (WHY TWICE?)
@@ -467,7 +476,7 @@ def buildNetworkAndConnections(sim, ImageNumPixelRows, ImageNumPixelColumns, num
                                        (h2+1)*numOrientations*numPixelRows*numPixelColumns + k2*numPixelRows*numPixelColumns + i*numPixelColumns + j))
 
         # Boundaries in lower levels strongly inhibit boundaries in higher segmentation levels (lower levels can be inhibited by segmentation signals)
-        sim.Projection(V2Layer23, V2Layer4, sim.FromListConnector(ST), sim.StaticSynapse(weight=connections['V2_SegmentInhib']))
+        sim.Projection(V2Layer23, V2Layer4, MyConnector(ST), sim.StaticSynapse(weight=connections['V2_SegmentInhib']))
         synapseCount += len(ST)
 
     ########### Surface segmentation network ############
@@ -521,39 +530,32 @@ def buildNetworkAndConnections(sim, ImageNumPixelRows, ImageNumPixelColumns, num
         synapseCount += len(SurfaceSegmentationOff)
 
         # SurfaceSegmentationOn/Off <-> Interneurons ; fliplr to use the connections in the way "target indexes --> source indexes"
-        sim.Projection(SurfaceSegmentationOn,        SurfaceSegmentationOnInter1,  sim.FromListConnector(ST),               sim.StaticSynapse(weight=connections['S_SegmentSpreadExcite']))
-        sim.Projection(SurfaceSegmentationOnInter2,  SurfaceSegmentationOn,        sim.FromListConnector(numpy.fliplr(ST)), sim.StaticSynapse(weight=connections['S_SegmentSpreadExcite']))
-        sim.Projection(SurfaceSegmentationOff,       SurfaceSegmentationOffInter1, sim.FromListConnector(ST),               sim.StaticSynapse(weight=connections['S_SegmentSpreadExcite']))
-        sim.Projection(SurfaceSegmentationOffInter2, SurfaceSegmentationOff,       sim.FromListConnector(numpy.fliplr(ST)), sim.StaticSynapse(weight=connections['S_SegmentSpreadExcite']))
+        sim.Projection(SurfaceSegmentationOn,        SurfaceSegmentationOnInter1,  MyConnector(ST),               sim.StaticSynapse(weight=connections['S_SegmentSpreadExcite']))
+        sim.Projection(SurfaceSegmentationOnInter2,  SurfaceSegmentationOn,        MyConnector(numpy.fliplr(ST)), sim.StaticSynapse(weight=connections['S_SegmentSpreadExcite']))
+        sim.Projection(SurfaceSegmentationOff,       SurfaceSegmentationOffInter1, MyConnector(ST),               sim.StaticSynapse(weight=connections['S_SegmentSpreadExcite']))
+        sim.Projection(SurfaceSegmentationOffInter2, SurfaceSegmentationOff,       MyConnector(numpy.fliplr(ST)), sim.StaticSynapse(weight=connections['S_SegmentSpreadExcite']))
         synapseCount += 4*len(ST)
 
         # SurfaceSegmentationOn/Off <-> Interneurons (flow out on interneuron 1 flow in on interneuron 2) ; fliplr to use the connections in the way "target indexes --> source indexes"
-        sim.Projection(SurfaceSegmentationOn,        SurfaceSegmentationOnInter2,  sim.FromListConnector(ST2),               sim.StaticSynapse(weight=connections['S_SegmentSpreadExcite']))
-        sim.Projection(SurfaceSegmentationOnInter1,  SurfaceSegmentationOn,        sim.FromListConnector(numpy.fliplr(ST2)), sim.StaticSynapse(weight=connections['S_SegmentSpreadExcite']))
-        sim.Projection(SurfaceSegmentationOff,       SurfaceSegmentationOffInter2, sim.FromListConnector(ST2),               sim.StaticSynapse(weight=connections['S_SegmentSpreadExcite']))
-        sim.Projection(SurfaceSegmentationOffInter1, SurfaceSegmentationOff,       sim.FromListConnector(numpy.fliplr(ST2)), sim.StaticSynapse(weight=connections['S_SegmentSpreadExcite']))
+        sim.Projection(SurfaceSegmentationOn,        SurfaceSegmentationOnInter2,  MyConnector(ST2),               sim.StaticSynapse(weight=connections['S_SegmentSpreadExcite']))
+        sim.Projection(SurfaceSegmentationOnInter1,  SurfaceSegmentationOn,        MyConnector(numpy.fliplr(ST2)), sim.StaticSynapse(weight=connections['S_SegmentSpreadExcite']))
+        sim.Projection(SurfaceSegmentationOff,       SurfaceSegmentationOffInter2, MyConnector(ST2),               sim.StaticSynapse(weight=connections['S_SegmentSpreadExcite']))
+        sim.Projection(SurfaceSegmentationOffInter1, SurfaceSegmentationOff,       MyConnector(numpy.fliplr(ST2)), sim.StaticSynapse(weight=connections['S_SegmentSpreadExcite']))
         synapseCount += 4*len(ST2)
 
-        # Mutual inhibition of interneurons
-        sim.Projection(SurfaceSegmentationOnInter1,  SurfaceSegmentationOnInter2,  sim.OneToOneConnector(), sim.StaticSynapse(weight=connections['S_SegmentInterInhib']))
-        sim.Projection(SurfaceSegmentationOnInter2,  SurfaceSegmentationOnInter1,  sim.OneToOneConnector(), sim.StaticSynapse(weight=connections['S_SegmentInterInhib']))
-        sim.Projection(SurfaceSegmentationOffInter1, SurfaceSegmentationOffInter2, sim.OneToOneConnector(), sim.StaticSynapse(weight=connections['S_SegmentInterInhib']))
-        sim.Projection(SurfaceSegmentationOffInter2, SurfaceSegmentationOffInter1, sim.OneToOneConnector(), sim.StaticSynapse(weight=connections['S_SegmentInterInhib']))
-        synapseCount += (len(SurfaceSegmentationOffInter1) + len(SurfaceSegmentationOffInter2) + len(SurfaceSegmentationOnInter1) + len(SurfaceSegmentationOnInter2))
-
         # V2Layer23 -> Segmentation Interneurons (all boundaries block except for orientation of flow)
-        sim.Projection(V2Layer23, SurfaceSegmentationOnInter1,  sim.FromListConnector(ST3), sim.StaticSynapse(weight=connections['V2_BoundaryInhib']))
-        sim.Projection(V2Layer23, SurfaceSegmentationOnInter2,  sim.FromListConnector(ST3), sim.StaticSynapse(weight=connections['V2_BoundaryInhib']))
-        sim.Projection(V2Layer23, SurfaceSegmentationOffInter1, sim.FromListConnector(ST3), sim.StaticSynapse(weight=connections['V2_BoundaryInhib']))
-        sim.Projection(V2Layer23, SurfaceSegmentationOffInter2, sim.FromListConnector(ST3), sim.StaticSynapse(weight=connections['V2_BoundaryInhib']))
+        sim.Projection(V2Layer23, SurfaceSegmentationOnInter1,  MyConnector(ST3), sim.StaticSynapse(weight=connections['V2_BoundaryInhib']))
+        sim.Projection(V2Layer23, SurfaceSegmentationOnInter2,  MyConnector(ST3), sim.StaticSynapse(weight=connections['V2_BoundaryInhib']))
+        sim.Projection(V2Layer23, SurfaceSegmentationOffInter1, MyConnector(ST3), sim.StaticSynapse(weight=connections['V2_BoundaryInhib']))
+        sim.Projection(V2Layer23, SurfaceSegmentationOffInter2, MyConnector(ST3), sim.StaticSynapse(weight=connections['V2_BoundaryInhib']))
         synapseCount += 4*len(ST3)
 
         # V2Layer23 -> V2Layer4 strong inhibition (CHECK WHY THIS CONNECTION IS THERE TWICE WITH THE SAME CONNECTION PATTERN)
-        # sim.Projection(V2Layer23, V2Layer4, sim.FromListConnector(ST4), sim.StaticSynapse(weight=connections['V2_SegmentInhib']))
+        # sim.Projection(V2Layer23, V2Layer4, MyConnector(ST4), sim.StaticSynapse(weight=connections['V2_SegmentInhib']))
         # synapseCount += len(ST4)
 
         # Segmentation -> V2Layer4 (gating) ; way for lower levels to be inhibited by higher ones : through segmentation network) SHOULDN'T IT BE ACTIVATORY????
-        sim.Projection(SurfaceSegmentationOn, V2Layer4, sim.FromListConnector(ST5), sim.StaticSynapse(weight=connections['S_SegmentGatingInhib']))
+        sim.Projection(SurfaceSegmentationOn, V2Layer4, MyConnector(ST5), sim.StaticSynapse(weight=connections['S_SegmentGatingInhib']))
         synapseCount += len(ST5)
 
     ########### Boundary segmentation network ############
@@ -597,18 +599,13 @@ def buildNetworkAndConnections(sim, ImageNumPixelRows, ImageNumPixelColumns, num
                                                     h2*numOrientations*numPixelRows*numPixelColumns + k2*numPixelRows*numPixelColumns + (i+i2)*numPixelColumns + (j+j2)))
 
         # BoundarySegmentationOn<->Interneurons (flow out on interneuron 1 flow in on interneuron 2)
-        sim.Projection(BoundarySegmentationOn,       BoundarySegmentationOnInter1, sim.FromListConnector(ST),               sim.StaticSynapse(weight=connections['B_SegmentSpreadExcite']))
-        sim.Projection(BoundarySegmentationOnInter2, BoundarySegmentationOn,       sim.FromListConnector(numpy.fliplr(ST)), sim.StaticSynapse(weight=connections['B_SegmentSpreadExcite']))
+        sim.Projection(BoundarySegmentationOn,       BoundarySegmentationOnInter1, MyConnector(ST),               sim.StaticSynapse(weight=connections['B_SegmentSpreadExcite']))
+        sim.Projection(BoundarySegmentationOnInter2, BoundarySegmentationOn,       MyConnector(numpy.fliplr(ST)), sim.StaticSynapse(weight=connections['B_SegmentSpreadExcite']))
         synapseCount += 2*len(ST)
 
-        sim.Projection(BoundarySegmentationOn,       BoundarySegmentationOnInter2, sim.FromListConnector(ST2),               sim.StaticSynapse(weight=connections['B_SegmentSpreadExcite']))
-        sim.Projection(BoundarySegmentationOnInter1, BoundarySegmentationOn,       sim.FromListConnector(numpy.fliplr(ST2)), sim.StaticSynapse(weight=connections['B_SegmentSpreadExcite']))
+        sim.Projection(BoundarySegmentationOn,       BoundarySegmentationOnInter2, MyConnector(ST2),               sim.StaticSynapse(weight=connections['B_SegmentSpreadExcite']))
+        sim.Projection(BoundarySegmentationOnInter1, BoundarySegmentationOn,       MyConnector(numpy.fliplr(ST2)), sim.StaticSynapse(weight=connections['B_SegmentSpreadExcite']))
         synapseCount += 2*len(ST2)
-
-        # Mutual inhibition of interneurons (may not need this: flow only when Inter3 is inhibited - 19 Dec 2014)
-        sim.Projection(BoundarySegmentationOnInter1, BoundarySegmentationOnInter2, sim.OneToOneConnector(), sim.StaticSynapse(weight=connections['B_SegmentInterInhib']))
-        sim.Projection(BoundarySegmentationOnInter2, BoundarySegmentationOnInter1, sim.OneToOneConnector(), sim.StaticSynapse(weight=connections['B_SegmentInterInhib']))
-        synapseCount+= 2*len(BoundarySegmentationOnInter1)
 
         # Inhibition from third interneuron (itself inhibited by the presence of a boundary)
         sim.Projection(BoundarySegmentationOnInter3, BoundarySegmentationOnInter1, sim.OneToOneConnector(), sim.StaticSynapse(weight=connections['B_SegmentTonicInhib']))
@@ -617,11 +614,11 @@ def buildNetworkAndConnections(sim, ImageNumPixelRows, ImageNumPixelColumns, num
 
         # V2layer23 -> Segmentation Interneurons (all boundaries open flow by inhibiting third interneuron)
         # BoundarySegmentationOnInter3.inject(sim.DCSource(amplitude=1000.0, start=0.0, stop=0.0))
-        sim.Projection(V2Layer23, BoundarySegmentationOnInter3, sim.FromListConnector(ST3), sim.StaticSynapse(weight=connections['B_SegmentOpenFlowInhib']))
+        sim.Projection(V2Layer23, BoundarySegmentationOnInter3, MyConnector(ST3), sim.StaticSynapse(weight=connections['B_SegmentOpenFlowInhib']))
         synapseCount += len(ST3)
 
         # BoundarySegmentation -> V2layer4 (gating)
-        sim.Projection(BoundarySegmentationOn, V2Layer4, sim.FromListConnector(ST4), sim.StaticSynapse(weight=connections['B_SegmentGatingInhib']))
+        sim.Projection(BoundarySegmentationOn, V2Layer4, MyConnector(ST4), sim.StaticSynapse(weight=connections['B_SegmentGatingInhib']))
         synapseCount += len(ST4)
 
     sys.stdout.write('done. \n'+str(synapseCount)+' network connections created.\n')

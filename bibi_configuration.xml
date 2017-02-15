@@ -1,21 +1,28 @@
 <?xml version="1.0" ?>
 <ns1:bibi xmlns:ns1="http://schemas.humanbrainproject.eu/SP10/2014/BIBI" xmlns:xsi="http://www.w3.org/2001/XMLSchema-instance">
-	<ns1:brainModel>
-		<ns1:file>braitenberg.py</ns1:file>
-		<ns1:populations from="0" population="sensors" to="5" xsi:type="ns1:Range"/>
-		<ns1:populations from="5" population="actors" to="8" xsi:type="ns1:Range"/>
-		<ns1:populations from="0" population="record" to="8" xsi:type="ns1:Range"/>
-	</ns1:brainModel>
-	<ns1:bodyModel>model.sdf</ns1:bodyModel>
-	<ns1:transferFunction src="csv_spike_monitor.py" xsi:type="ns1:PythonTransferFunction"/>
-	<ns1:transferFunction xsi:type="ns1:PythonTransferFunction">
+
+
+    <ns1:brainModel> <!-- "brain"??? -->
+        <ns1:file>LaminartBrainInNRP.py</ns1:file>
+    </ns1:brainModel>
+
+
+    <ns1:bodyModel>model.sdf</ns1:bodyModel>
+
+
+    <ns1:transferFunction src="csv_spike_monitor.py" xsi:type="ns1:PythonTransferFunction"/>
+
+
+    <ns1:transferFunction xsi:type="ns1:PythonTransferFunction">
     #
     @nrp.NeuronMonitor(nrp.brain.record, nrp.spike_recorder)
     def all_neurons_monitor(t):
         return True
     #
-  </ns1:transferFunction>
-	<ns1:transferFunction xsi:type="ns1:PythonTransferFunction">
+    </ns1:transferFunction> <!-- TF to set things to record neurons??? -->
+
+
+    <ns1:transferFunction xsi:type="ns1:PythonTransferFunction">
     #
     from sensor_msgs.msg import JointState
 
@@ -26,83 +33,145 @@
         joints = joints.value
         eye_position.value = joints.position[joints.name.index('eye_version')]
     #
-  </ns1:transferFunction>
-	<ns1:transferFunction xsi:type="ns1:PythonTransferFunction">
+    </ns1:transferFunction> <!-- TF to set the eyes position IMPORTANT POUR MOI -->
+
+
+    <ns1:transferFunction xsi:type="ns1:PythonTransferFunction">
     #
-    from gazebo_msgs.msg import ModelState
+    <!-- Input transfer function that transforms the camera input into a DC current source fed to LGN neurons -->
+    import numpy, scipy.ndimage.interpolation, sensor_msgs.msg
+    from cv_bridge import CvBridge
 
-    @nrp.MapVariable(&quot;target_freq&quot;, initial_value=0.3)
-    @nrp.MapVariable(&quot;target_ampl&quot;, initial_value=0.3)
-    @nrp.MapVariable(&quot;target_center&quot;, initial_value={'x': 0, 'y': 2.42, 'z': 1.2})
-    @nrp.Neuron2Robot(Topic('/gazebo/set_model_state', ModelState))
-    def move_target(t, target_freq, target_ampl, target_center):
-        from gazebo_msgs.msg import ModelState
-        m = ModelState()
-        frequency = target_freq.value
-        amplitude = target_ampl.value
-        center = target_center.value
-
-        m.model_name = 'Target'
-
-        # set orientation RYP axes
-        m.pose.orientation.x = 0
-        m.pose.orientation.y = 1
-        m.pose.orientation.z = 1
-
-        m.reference_frame = 'world'
-        m.pose.position.x = \
-            center['x'] + np.sin(t * frequency * 2 * np.pi) * (float(amplitude) / 2)
-        m.pose.position.y = center['y']
-        m.pose.position.z = center['z']
-        print m
-        return m
-    #
-  </ns1:transferFunction>
-	<ns1:transferFunction xsi:type="ns1:PythonTransferFunction">
-    #
-    from std_msgs.msg import Float64
-
-    @nrp.MapVariable(&quot;eye_position&quot;, scope=nrp.GLOBAL)
-    @nrp.MapSpikeSink(&quot;result_0_dv&quot;, nrp.brain.actors[1], nrp.leaky_integrator_alpha)
-    @nrp.MapSpikeSink(&quot;result_1_dv&quot;, nrp.brain.actors[2], nrp.leaky_integrator_alpha)
-    @nrp.Neuron2Robot(Topic('/robot/eye_version/pos', Float64))
-    def tf_results(t, eye_position, result_0_dv, result_1_dv):
-        def deg2rad(deg):
-            &quot;&quot;&quot;
-            Degrees to radians conversion function.
-            :param deg: value in degrees
-            :return: value of deg in radians
-            &quot;&quot;&quot;
-            return (float(deg) / 360.) * (2. * np.pi)
-        d = result_1_dv.voltage - result_0_dv.voltage
-        max_mov = 1.0
-        ret = eye_position.value + deg2rad(-((d + 0.03) / 0.09 * 2 * max_mov - max_mov))
-
-        return ret
-    #
-  </ns1:transferFunction>
-	<ns1:transferFunction xsi:type="ns1:PythonTransferFunction">
-    #
-    @nrp.MapRobotSubscriber(&quot;camera&quot;, Topic('/icub_model/left_eye_camera/image_raw', sensor_msgs.msg.Image))
-    @nrp.MapSpikeSource(&quot;red_left_eye&quot;, nrp.brain.sensors[slice(0, 3, 2)], nrp.poisson)
-    @nrp.MapSpikeSource(&quot;red_right_eye&quot;, nrp.brain.sensors[slice(1, 4, 2)], nrp.poisson)
-    @nrp.MapSpikeSource(&quot;green_blue_eye&quot;, nrp.brain.sensors[4], nrp.poisson)
+    @nrp.MapRobotSubscriber(&quot;camera&quot;, Topic(&quot;/icub_model/left_eye_camera/image_raw&quot;, sensor_msgs.msg.Image))
+    @nrp.MapSpikeSource(&quot;LGNBrightInput&quot;, nrp.map_neurons(range(0, ImageNumPixelRows*ImageNumPixelColumns), lambda i: nrp.brain.LGNBright[i]), nrp.dc_source)
+    @nrp.MapSpikeSource(&quot;LGNDarkInput&quot;,   nrp.map_neurons(range(0, ImageNumPixelRows*ImageNumPixelColumns), lambda i: nrp.brain.LGNDark[i]),   nrp.dc_source)
     @nrp.Robot2Neuron()
-    def eye_sensor_transmit(t, camera, red_left_eye, red_right_eye, green_blue_eye):
-        import math
-        tf = hbp_nrp_cle.tf_framework.tf_lib
-        xy_ball_pos = tf.find_centroid_hsv(camera.value, [50, 100, 100], [70, 255, 255]) \
-            or (160, 120)
-        ae_ball_pos = tf.cam.pixel2angle(xy_ball_pos[0], xy_ball_pos[1])
-        red = 76800.0 / (1.0 + math.exp(-ae_ball_pos[0]))
+    def grab_image(t, camera, LGNBrightInput, LGNDarkInput):
 
-        red_left_eye.rate = 1000.0 * red / 76800.0
-        red_right_eye.rate = 1000.0 * red / 76800.0
-        green_blue_eye.rate = 1000.0 * (76800.0 - red) / 76800.0
+        image = camera.value
+        if image is not None:
 
+            <!-- Read the image into an array, mean over 3 colors, resize it to the dimensions of the network and flatten the result -->
+            imgIn = numpy.mean(CvBridge().imgmsg_to_cv2(image, "rgb8"), axis=2)
+            resizeFactor = (float(ImageNumPixelRows)/imgIn.shape[0], float(ImageNumPixelColumns)/imgIn.shape[1])
+            imgResized = scipy.ndimage.interpolation.zoom(imgIn, resizeFactor, order=3).flatten()
+
+            <!-- Give the pre-processed image to the LGN (bright and dark inputs) -->
+            LGNBrightInput.amplitude = numpy.random.poisson(10.0*max(0.0, (imgIn/127.0-1.0)))
+            LGNDarkInput  .amplitude = numpy.random.poisson(10.0*max(0.0, 1.0-(imgIn/127.0)))
     #
-  </ns1:transferFunction>
-	<ns1:transferFunction xsi:type="ns1:PythonTransferFunction">
+    </ns1:transferFunction>
+
+
+
+
+    <ns1:transferFunction xsi:type="ns1:PythonTransferFunction">
+    #
+    <!-- Output transfer function that transforms the Laminart network output into a movement of the robot's eyes (for now: whatever movement) -->
+    from std_msgs.msg import Float64
+    <!-- THE NEXT LINE INITIALIZE A GLOBAL VARIABLE NECESSARY FOR THE OUTPUT TRANSFER FUNCTION (declare here = ok?) -->
+    V4SpikeCountUpToLastStep = numpy.array([[[0 for j in range(ImageNumPixelColumns)] for i in range(ImageNumPixelRows)] for h in range(numSegmentationLayers)])
+
+    @nrp.MapVariable(&quot;eyePosition&quot;, scope=nrp.GLOBAL)
+    @nrp.MapSpikeSink(&quot;V4&quot;, nrp.brain.V4Brightness, nrp.leaky_integrator_alpha)
+    @nrp.Neuron2Robot(Topic(&quot;/robot/eye_version/pos&quot;, Float64))
+    def tf_results(t, eyePosition, V4):
+
+        <!-- Record the activity of the V4 brightness segmentation layers and store the last step spike count in a numpy array -->
+        V4SpikeCountUpToNow  = [value for (key, value) in sorted(V4.get_spike_counts().items())]
+        V4SpikeCountThisStep = numpy.array([[[0 for j in range(ImageNumPixelColumns)] for i in range(ImageNumPixelRows)] for h in range(numSegmentationLayers)])
+        for h in range(nrp.numSegmentationLayers):
+            for i in range(nrp.ImageNumPixelRows):
+                for j in range(nrp.ImageNumPixelColumns):
+                    V4SpikeCountThisStep[h][i][j] += V4SpikeCountUpToNow[h*ImageNumPixelRows*ImageNumPixelColumns + i*ImageNumPixelColumns + j] - V4SpikeCountUpToLastStep[h][i][j]
+                    V4SpikeCountUpToLastStep[h][i][j] += V4SpikeCountThisStep[h][i][j]  # update cumulative spikes
+
+        <!-- Take segmentation layer with the most activity and find the position of with the most contrast within (DUMB CRITERION) -->
+        <!-- A CRITERION COULD BE E.G. A TASK-RELATED (LIKE IN FACE DETECTOR) SALIENCY MAP MAXIMUM, BETWEEN ALL SEGMENTATION LAYERS -->
+        winnerSegmentationLayer = numpy.argmax(numpy.sum(V4SpikeCountThisStep, axis=(1,2)))
+        winnerSquaredGradientMap = numpy.sum(numpy.square(numpy.gradient(V4SpikeCountThisStep[winnerSegmentationLayer])), axis=0) <!-- sum both gradient directions ("sum(..., axis=0)") -->
+        targetPosition = list(numpy.unravel_index(numpy.argmax(winnerSquaredGradientMap), (ImageNumPixelRows, ImageNumPixelColumns)))
+        displacementVector = ImageNumPixelRows/2 - targetPosition[0]
+
+        <!-- New eye position (reduced and smoothed to the maximum possible movement) -->
+        maxMov = 0.25 <!-- in rad, corresponds to 15 degrees -->
+        return eyePosition.value + maxMov*numpy.tanh(displacementVector) <!-- new eye position -->
+    #
+    </ns1:transferFunction>
+
+
+
+    <ns1:transferFunction xsi:type="ns1:PythonTransferFunction">
+    #
+    <!-- Input transfer function that sends segmentation signals, following top-down and bottom-up cues (dumb choice of position for now) -->
+    import random
+
+    @nrp.MapRobotSubscriber(&quot;camera&quot;, Topic(&quot;/icub_model/left_eye_camera/image_raw&quot;, sensor_msgs.msg.Image))
+    @nrp.MapSpikeSource(&quot;SurfaceSegmentationOffSignal&quot;, nrp.map_neurons(range(0, (numSegmentationLayers-1)*ImageNumPixelRows*ImageNumPixelColumns), lambda i: SurfaceSegmentationOff[i]), nrp.dc_source)
+    @nrp.MapSpikeSource(&quot;SurfaceSegmentationOnSignal&quot;,  nrp.map_neurons(range(0, (numSegmentationLayers-1)*ImageNumPixelRows*ImageNumPixelColumns), lambda i: SurfaceSegmentationOn [i]), nrp.dc_source)
+    @nrp.MapSpikeSource(&quot;BoundarySegmentationSignal&quot;,   nrp.map_neurons(range(0, (numSegmentationLayers-1)*ImageNumPixelRows*ImageNumPixelColumns), lambda i: BoundarySegmentationOn[i]), nrp.dc_source)
+    @nrp.Robot2Neuron()
+    def send_segmentation_signals(t, camera, SurfaceSegmentationOffSignal, SurfaceSegmentationOnSignal, BoundarySegmentationSignal):
+
+        image = camera.value
+        if image is not None:
+
+            <!-- Read the image into an array, mean over 3 colors and resize it to the dimensions of the network -->
+            imgIn = numpy.mean(CvBridge().imgmsg_to_cv2(image, "rgb8"), axis=2)
+            resizeFactor = (float(ImageNumPixelRows)/imgIn.shape[0], float(ImageNumPixelColumns)/imgIn.shape[1])
+            imgResized = scipy.ndimage.interpolation.zoom(imgIn, resizeFactor, order=3)
+
+            <!-- Loop through all non-basic segmentation layers and send signals around top-down / bottom-up selected targets -->
+            surfaceOnTarget = []
+            surfaceOffTarget = []
+            boundaryOnTarget = []
+            for h in range(numSegmentationLayers-1):
+
+                <!-- Look for the best place to send a segmentation signal (DUMB CRITERION) -->
+                <!-- HERE WE SHOULD DEVELOP THE CRITERION (TASK-RELATED SALIENCY MAX) AND ALSO IMPLEMENT AND TASK RELATED TOP-DOWN SIGNALS -->
+                squaredGradientMap = numpy.sum(numpy.square(numpy.gradient(imgResized)), axis=0) # sum both gradient directions ("sum(..., axis=0)")
+                targetPosition = list(numpy.unravel_index(numpy.argmax(squaredGradientMap), (ImageNumPixelRows, ImageNumPixelColumns)))
+                if useSDPropToDist:
+                    segmentationTargetLocationSD = minSD + rateSD*numpy.sqrt((ImageNumPixelRows - targetPosition[0])**2 + (ImageNumPixelColumns - targetPosition[1])**2)
+                segmentLocationRow = int(round(random.gauss(targetPosition[0], segmentationTargetLocationSD)))
+                segmentLocationCol = int(round(random.gauss(targetPosition[1], segmentationTargetLocationSD)))
+
+                <!-- Define surface segmentation signals (gives local DC inputs to surface and boundary segmentation networks) -->
+                if useSurfaceSegmentation:
+                    for i in range(0, ImageNumPixelRows):         <!-- Rows -->
+                        for j in range(0, ImageNumPixelColumns):  <!-- Columns -->
+
+                            <!-- Off signals are at borders of image (will flow in to other locations unless stopped by boundaries) -->
+                            if i==0 or i==(ImageNumPixelRows-1) or j==0 or j==(ImageNumPixelColumns-1):
+                                surfaceOffTarget.append(h*ImageNumPixelRows*ImageNumPixelColumns + i*ImageNumPixelColumns + j)
+
+                            <!-- On signals start the surface segmentation at a specific location and flow across closed shapes formed by boundaries -->
+                            distance = numpy.sqrt(numpy.power(segmentLocationRow-i, 2) + numpy.power(segmentLocationCol-j, 2))
+                            if distance &gt; segmentationSignalSize:
+                                surfaceOnTarget.append(h*ImageNumPixelRows*ImageNumPixelColumns + i*ImageNumPixelColumns + j)
+
+                <!-- Define boundary segmentation signals -->
+                if useBoundarySegmentation:
+                    for i in range(0, ImageNumPixelRows):         <!-- Rows -->
+                        for j in range(0, ImageNumPixelColumns):  <!-- Columns -->
+
+                            <!-- On signals start the boundary segmentation at a specific location and flow along connected boundaries -->
+                            distance = numpy.sqrt(numpy.power(segmentLocationRow-i, 2) + numpy.power(segmentLocationCol-j, 2))
+                            if distance &gt; segmentationSignalSize:
+                                boundaryOnTarget.append(h*ImageNumPixelRows*ImageNumPixelColumns + i*ImageNumPixelColumns + j)
+
+            <!-- Set a firing positive firing rate for concerned units of the segmentation top-down signal -->
+            if len(surfaceOffTarget) > 0:
+                SurfaceSegmentationOffSignal[surfaceOffTarget].amplitude = 1.0
+            if len(surfaceOnTarget)  > 0:
+                SurfaceSegmentationOnSignal [surfaceOnTarget] .amplitude = 1.0
+            if len(boundaryOnTarget) > 0:
+                BoundarySegmentationSignal  [boundaryOnTarget].amplitude = 1.0
+    #
+    </ns1:transferFunction>
+
+
+    <ns1:transferFunction xsi:type="ns1:PythonTransferFunction">
     #
     from sensor_msgs.msg import JointState
 
@@ -123,5 +192,7 @@
 
         return ret
     #
-  </ns1:transferFunction>
+    </ns1:transferFunction>
+
+
 </ns1:bibi>
