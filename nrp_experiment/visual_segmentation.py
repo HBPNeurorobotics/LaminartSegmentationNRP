@@ -10,14 +10,10 @@ from pyNN.connectors import Connector
 import numpy
 import nest
 import logging
-import rospy
 from std_msgs.msg import String
 
 logger = logging.getLogger(__name__)
 # sim.setup(timestep=1.0, min_delay=1.0, max_delay=10.0)
-clientLogger = rospy.Publisher('/ros_cle_simulation/logs', String, latch=True,
-                               queue_size=10)
-clientLogger.publish("Instanciating Visual Segmentation Brain")
 
 
 ####################################
@@ -26,7 +22,7 @@ clientLogger.publish("Instanciating Visual Segmentation Brain")
 
 
 # General parameters
-ImageNumPixelRows = 5      # number of rows for the network (the input image is scaled to the dimensions of the network)
+ImageNumPixelRows = 5    # number of rows for the network (the input image is scaled to the dimensions of the network)
 ImageNumPixelColumns = 5   # number of columns for the network (the input image is scaled to the dimensions of the network)
 weightScale   = 1.0        # general weight for all connections between neurons
 constantInput = 0.5        # input given to the tonic interneuron layer and to the top-down activated segmentation neurons

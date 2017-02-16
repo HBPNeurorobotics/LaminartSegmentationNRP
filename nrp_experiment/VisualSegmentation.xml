@@ -6,6 +6,7 @@
   <bodyModel>icub_model/model.sdf</bodyModel>
   <transferFunction xsi:type="PythonTransferFunction" src="BIBI/grab_image.py"/>
   <transferFunction xsi:type="PythonTransferFunction" src="BIBI/plot_V1_activity.py"/>
+  <!-- <transferFunction xsi:type="PythonTransferFunction" src="BIBI/init_params.py"/> -->
   <!-- <transferFunction xsi:type="PythonTransferFunction" src="BIBI/eye_control.py"/> -->
   <!-- <transferFunction xsi:type="PythonTransferFunction" src="BIBI/send_segmentation_signals.py"/> -->
   <transferFunction xsi:type="PythonTransferFunction">
